@@ -39,7 +39,7 @@ namespace Jitter.Dynamics
         /// Called once before iteration starts.
         /// </summary>
         /// <param name="timestep">The simulation timestep</param>
-        void PrepareForIteration(float timestep);
+        void PrepareForIteration(JFix64 timestep);
 
         /// <summary>
         /// Iteratively solve this constraint.

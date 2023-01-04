@@ -47,7 +47,7 @@ namespace Jitter.Collision.Shapes
 
         // internal values so we can access them fast  without calling properties.
         internal JMatrix inertia = JMatrix.Identity;
-        internal float mass = 1.0f;
+        internal JFix64 mass = JFix64.One;
 
         internal JBBox boundingBox = JBBox.LargeBox;
         internal JVector geomCen = JVector.Zero;
@@ -73,7 +73,7 @@ namespace Jitter.Collision.Shapes
         /// <summary>
         /// Gets the mass of the shape. This is the volume. (density = 1)
         /// </summary>
-        public float Mass { get { return mass; } protected set { mass = value; } }
+        public JFix64 Mass { get { return mass; } protected set { mass = value; } }
 
         /// <summary>
         /// Informs all listener that the shape changed.
@@ -111,7 +111,7 @@ namespace Jitter.Collision.Shapes
         /// <param name="generationThreshold"></param>
         public virtual void MakeHull(ref List<JVector> triangleList, int generationThreshold)
         {
-            float distanceThreshold = 0.0f;
+            JFix64 distanceThreshold = JFix64.Zero;
 
             if (generationThreshold < 0) generationThreshold = 4;
 
@@ -163,11 +163,11 @@ namespace Jitter.Collision.Shapes
                 JVector p2; SupportMapping(ref tri.n2, out p2);
                 JVector p3; SupportMapping(ref tri.n3, out p3);
 
-                float d1 = (p2 - p1).LengthSquared();
-                float d2 = (p3 - p2).LengthSquared();
-                float d3 = (p1 - p3).LengthSquared();
+                JFix64 d1 = (p2 - p1).LengthSquared();
+                JFix64 d2 = (p3 - p2).LengthSquared();
+                JFix64 d3 = (p1 - p3).LengthSquared();
 
-                if (Math.Max(Math.Max(d1, d2), d3) > distanceThreshold && tri.generation < generationThreshold)
+                if (JFix64Math.Max(JFix64Math.Max(d1, d2), d3) > distanceThreshold && tri.generation < generationThreshold)
                 {
                     ClipTriangle tri1 = new ClipTriangle();
                     ClipTriangle tri2 = new ClipTriangle();
@@ -183,21 +183,21 @@ namespace Jitter.Collision.Shapes
                     tri2.n2 = tri.n2;
                     tri3.n3 = tri.n3;
 
-                    JVector n = 0.5f * (tri.n1 + tri.n2);
+                    JVector n = JFix64.Half * (tri.n1 + tri.n2);
                     n.Normalize();
 
                     tri1.n2 = n;
                     tri2.n1 = n;
                     tri4.n3 = n;
 
-                    n = 0.5f * (tri.n2 + tri.n3);
+                    n = JFix64.Half * (tri.n2 + tri.n3);
                     n.Normalize();
 
                     tri2.n3 = n;
                     tri3.n2 = n;
                     tri4.n1 = n;
 
-                    n = 0.5f * (tri.n3 + tri.n1);
+                    n = JFix64.Half * (tri.n3 + tri.n1);
                     n.Normalize();
 
                     tri1.n3 = n;
@@ -211,7 +211,7 @@ namespace Jitter.Collision.Shapes
                 }
                 else
                 {
-                    if (((p3 - p1) % (p2 - p1)).LengthSquared() > JMath.Epsilon)
+                    if (((p3 - p1) % (p2 - p1)).LengthSquared() > JFix64Math.Epsilon)
                     {
                         triangleList.Add(p1);
                         triangleList.Add(p2);
@@ -281,11 +281,11 @@ namespace Jitter.Collision.Shapes
         /// <param name="centerOfMass"></param>
         /// <param name="inertia">Returns the inertia relative to the center of mass, not to the origin</param>
         /// <returns></returns>
-        #region  public static float CalculateMassInertia(Shape shape, out JVector centerOfMass, out JMatrix inertia)
-        public static float CalculateMassInertia(Shape shape, out JVector centerOfMass,
+        #region  public static JFix64 CalculateMassInertia(Shape shape, out JVector centerOfMass, out JMatrix inertia)
+        public static JFix64 CalculateMassInertia(Shape shape, out JVector centerOfMass,
             out JMatrix inertia)
         {
-            float mass = 0.0f;
+            JFix64 mass = JFix64.Zero;
             centerOfMass = JVector.Zero; inertia = JMatrix.Zero;
 
             if (shape is Multishape) throw new ArgumentException("Can't calculate inertia of multishapes.", "shape");
@@ -296,7 +296,7 @@ namespace Jitter.Collision.Shapes
 
             // create inertia of tetrahedron with vertices at
             // (0,0,0) (1,0,0) (0,1,0) (0,0,1)
-            float a = 1.0f / 60.0f, b = 1.0f / 120.0f;
+            JFix64 a = JFix64.One / (60 * JFix64.One), b = JFix64.One / (120 * JFix64.One);
             JMatrix C = new JMatrix(a, b, b, b, a, b, b, b, a);
 
             for (int i = 0; i < hullTriangles.Count; i += 3)
@@ -309,14 +309,14 @@ namespace Jitter.Collision.Shapes
                     column0.Y, column1.Y, column2.Y,
                     column0.Z, column1.Z, column2.Z);
 
-                float detA = A.Determinant();
+                JFix64 detA = A.Determinant();
 
                 // now transform this canonical tetrahedron to the target tetrahedron
                 // inertia by a linear transformation A
                 JMatrix tetrahedronInertia = JMatrix.Multiply(A * C * JMatrix.Transpose(A), detA);
 
-                JVector tetrahedronCOM = (1.0f / 4.0f) * (hullTriangles[i + 0] + hullTriangles[i + 1] + hullTriangles[i + 2]);
-                float tetrahedronMass = (1.0f / 6.0f) * detA;
+                JVector tetrahedronCOM = (JFix64.One / (4 * JFix64.One)) * (hullTriangles[i + 0] + hullTriangles[i + 1] + hullTriangles[i + 2]);
+                JFix64 tetrahedronMass = (JFix64.One / (6 * JFix64.One)) * detA;
 
                 inertia += tetrahedronInertia;
                 centerOfMass += tetrahedronMass * tetrahedronCOM;
@@ -324,11 +324,11 @@ namespace Jitter.Collision.Shapes
             }
 
             inertia = JMatrix.Multiply(JMatrix.Identity, inertia.Trace()) - inertia;
-            centerOfMass = centerOfMass * (1.0f / mass);
+            centerOfMass = centerOfMass * (JFix64.One / mass);
 
-            float x = centerOfMass.X;
-            float y = centerOfMass.Y;
-            float z = centerOfMass.Z;
+            JFix64 x = centerOfMass.X;
+            JFix64 y = centerOfMass.Y;
+            JFix64 z = centerOfMass.Z;
 
             // now translate the inertia by the center of mass
             JMatrix t = new JMatrix(

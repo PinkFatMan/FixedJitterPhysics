@@ -60,7 +60,7 @@ namespace Jitter.Collision.Shapes
         /// <param name="length">The length of the box.</param>
         /// <param name="height">The height of the box.</param>
         /// <param name="width">The width of the box</param>
-        public BoxShape(float length, float height, float width)
+        public BoxShape(JFix64 length, JFix64 height, JFix64 width)
         {
             this.size.X = length;
             this.size.Y = height;
@@ -78,7 +78,7 @@ namespace Jitter.Collision.Shapes
         /// </summary>
         public override void UpdateShape()
         {
-            this.halfSize = size * 0.5f;
+            this.halfSize = size * JFix64.Half;
             base.UpdateShape();
         }
 
@@ -89,7 +89,7 @@ namespace Jitter.Collision.Shapes
         /// <param name="box">The axis aligned bounding box of the shape.</param>
         public override void GetBoundingBox(ref JMatrix orientation, out JBBox box)
         {
-            JMatrix abs; JMath.Absolute(ref orientation, out abs);
+            JMatrix abs; JFix64Math.Absolute(ref orientation, out abs);
             JVector temp;
             JVector.Transform(ref halfSize, ref abs, out temp);
 
@@ -108,9 +108,9 @@ namespace Jitter.Collision.Shapes
             mass = size.X * size.Y * size.Z;
 
             inertia = JMatrix.Identity;
-            inertia.M11 = (1.0f / 12.0f) * mass * (size.Y * size.Y + size.Z * size.Z);
-            inertia.M22 = (1.0f / 12.0f) * mass * (size.X * size.X + size.Z * size.Z);
-            inertia.M33 = (1.0f / 12.0f) * mass * (size.X * size.X + size.Y * size.Y);
+            inertia.M11 = (JFix64.One / (12 * JFix64.One)) * mass * (size.Y * size.Y + size.Z * size.Z);
+            inertia.M22 = (JFix64.One / (12 * JFix64.One)) * mass * (size.X * size.X + size.Z * size.Z);
+            inertia.M33 = (JFix64.One / (12 * JFix64.One)) * mass * (size.X * size.X + size.Y * size.Y);
 
             this.geomCen = JVector.Zero;
         }
@@ -124,9 +124,9 @@ namespace Jitter.Collision.Shapes
         /// <param name="result">The result.</param>
         public override void SupportMapping(ref JVector direction, out JVector result)
         {
-            result.X = (float)Math.Sign(direction.X) * halfSize.X;
-            result.Y = (float)Math.Sign(direction.Y) * halfSize.Y;
-            result.Z = (float)Math.Sign(direction.Z) * halfSize.Z;
+            result.X = JFix64Math.Sign(direction.X) * halfSize.X;
+            result.Y = JFix64Math.Sign(direction.Y) * halfSize.Y;
+            result.Z = JFix64Math.Sign(direction.Z) * halfSize.Z;
         }
     }
 }

@@ -112,7 +112,7 @@ namespace Jitter.Collision.Shapes
         public TransformedShape[] Shapes { get { return this.shapes; } }
 
         JVector shifted;
-        public JVector Shift { get { return -1.0f * this.shifted; } }
+        public JVector Shift { get { return -JFix64.One * this.shifted; } }
 
         private JBBox mInternalBBox;
 
@@ -178,7 +178,7 @@ namespace Jitter.Collision.Shapes
         private void DoShifting()
         {
             for (int i = 0; i < Shapes.Length; i++) shifted += Shapes[i].position;
-            shifted *= (1.0f / shapes.Length);
+            shifted *= (JFix64.One / shapes.Length);
 
             for (int i = 0; i < Shapes.Length; i++) Shapes[i].position -= shifted;
         }
@@ -186,13 +186,13 @@ namespace Jitter.Collision.Shapes
         public override void CalculateMassInertia()
         {
             base.inertia = JMatrix.Zero;
-            base.mass = 0.0f;
+            base.mass = JFix64.Zero;
 
             for (int i = 0; i < Shapes.Length; i++)
             {
                 JMatrix currentInertia = Shapes[i].InverseOrientation * Shapes[i].Shape.Inertia * Shapes[i].Orientation;
-                JVector p = Shapes[i].Position * -1.0f;
-                float m = Shapes[i].Shape.Mass;
+                JVector p = Shapes[i].Position * -JFix64.One;
+                JFix64 m = Shapes[i].Shape.Mass;
 
                 currentInertia.M11 += m * (p.Y * p.Y + p.Z * p.Z);
                 currentInertia.M22 += m * (p.X * p.X + p.Z * p.Z);
@@ -251,13 +251,13 @@ namespace Jitter.Collision.Shapes
             box.Min = mInternalBBox.Min;
             box.Max = mInternalBBox.Max;
 
-            JVector localHalfExtents = 0.5f * (box.Max - box.Min);
-            JVector localCenter = 0.5f * (box.Max + box.Min);
+            JVector localHalfExtents = JFix64.Half * (box.Max - box.Min);
+            JVector localCenter = JFix64.Half * (box.Max + box.Min);
 
             JVector center;
             JVector.Transform(ref localCenter, ref orientation, out center);
 
-            JMatrix abs; JMath.Absolute(ref orientation, out abs);
+            JMatrix abs; JFix64Math.Absolute(ref orientation, out abs);
             JVector temp;
             JVector.Transform(ref localHalfExtents, ref abs, out temp);
 
@@ -326,8 +326,8 @@ namespace Jitter.Collision.Shapes
 
         protected void UpdateInternalBoundingBox()
         {
-            mInternalBBox.Min = new JVector(float.MaxValue);
-            mInternalBBox.Max = new JVector(float.MinValue);
+            mInternalBBox.Min = new JVector(JFix64.MaxValue);
+            mInternalBBox.Max = new JVector(JFix64.MinValue);
 
             for (int i = 0; i < shapes.Length; i++)
             {

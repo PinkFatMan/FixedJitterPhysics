@@ -67,7 +67,7 @@ namespace Jitter.Collision.Shapes
 
         public JVector Shift()
         {
-            return -1 * this.shifted;
+            return -JFix64.One * this.shifted;
         }
 
         public override void CalculateMassInertia()

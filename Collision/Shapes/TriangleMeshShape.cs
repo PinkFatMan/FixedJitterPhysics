@@ -37,13 +37,13 @@ namespace Jitter.Collision.Shapes
         private List<int> potentialTriangles = new List<int>();
         private Octree octree = null;
 
-        private float sphericalExpansion = 0.05f;
+        private JFix64 sphericalExpansion = (5 * JFix64.EN2);
 
         /// <summary>
         /// Expands the triangles by the specified amount.
         /// This stabilizes collision detection for flat shapes.
         /// </summary>
-        public float SphericalExpansion 
+        public JFix64 SphericalExpansion 
         { 
             get { return sphericalExpansion; } 
             set { sphericalExpansion = value; } 
@@ -150,9 +150,9 @@ namespace Jitter.Collision.Shapes
             JVector.Normalize(ref direction, out exp);
             exp *= sphericalExpansion;
 
-            float min = JVector.Dot(ref vecs[0], ref direction);
+            JFix64 min = JVector.Dot(ref vecs[0], ref direction);
             int minIndex = 0;
-            float dot = JVector.Dot(ref vecs[1], ref direction);
+            JFix64 dot = JVector.Dot(ref vecs[1], ref direction);
             if (dot > min)
             {
                 min = dot;
@@ -207,7 +207,7 @@ namespace Jitter.Collision.Shapes
             JVector sum = vecs[0];
             JVector.Add(ref sum, ref vecs[1], out sum);
             JVector.Add(ref sum, ref vecs[2], out sum);
-            JVector.Multiply(ref sum, 1.0f / 3.0f, out sum);
+            JVector.Multiply(ref sum, JFix64.One / (3 * JFix64.One), out sum);
 
       
             geomCen = sum;

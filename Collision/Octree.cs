@@ -169,8 +169,8 @@ namespace Jitter.Collision
             triBoxes = new JBBox[tris.Length];
 
             // create an infinite size root box
-            rootNodeBox = new JBBox(new JVector(float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity),
-                                           new JVector(float.NegativeInfinity, float.NegativeInfinity, float.NegativeInfinity));
+            rootNodeBox = new JBBox(new JVector(JFix64.PositiveInfinity, JFix64.PositiveInfinity, JFix64.PositiveInfinity),
+                                           new JVector(JFix64.NegativeInfinity, JFix64.NegativeInfinity, JFix64.NegativeInfinity));
 
 
             for (int i = 0; i < tris.Length; i++)
@@ -295,20 +295,20 @@ namespace Jitter.Collision
         {
             JVector dims;
             JVector.Subtract(ref aabb.Max, ref aabb.Min, out dims);
-            JVector.Multiply(ref dims, 0.5f, out dims);
+            JVector.Multiply(ref dims, JFix64.Half, out dims);
 
             JVector offset = JVector.Zero;
 
             switch (child)
             {
-                case EChild.PPP: offset = new JVector(1, 1, 1); break;
-                case EChild.PPM: offset = new JVector(1, 1, 0); break;
-                case EChild.PMP: offset = new JVector(1, 0, 1); break;
-                case EChild.PMM: offset = new JVector(1, 0, 0); break;
-                case EChild.MPP: offset = new JVector(0, 1, 1); break;
-                case EChild.MPM: offset = new JVector(0, 1, 0); break;
-                case EChild.MMP: offset = new JVector(0, 0, 1); break;
-                case EChild.MMM: offset = new JVector(0, 0, 0); break;
+                case EChild.PPP: offset = new JVector(JFix64.One, JFix64.One, JFix64.One); break;
+                case EChild.PPM: offset = new JVector(JFix64.One, JFix64.One, JFix64.Zero); break;
+                case EChild.PMP: offset = new JVector(JFix64.One, JFix64.Zero, JFix64.One); break;
+                case EChild.PMM: offset = new JVector(JFix64.One, JFix64.Zero, JFix64.Zero); break;
+                case EChild.MPP: offset = new JVector(JFix64.Zero, JFix64.One, JFix64.One); break;
+                case EChild.MPM: offset = new JVector(JFix64.Zero, JFix64.One, JFix64.Zero); break;
+                case EChild.MMP: offset = new JVector(JFix64.Zero, JFix64.Zero, JFix64.One); break;
+                case EChild.MMM: offset = new JVector(JFix64.Zero, JFix64.Zero, JFix64.Zero); break;
 
                 default:
                     System.Diagnostics.Debug.WriteLine("Octree.CreateAABox  got impossible child");
@@ -322,7 +322,7 @@ namespace Jitter.Collision
             JVector.Add(ref result.Min, ref dims, out result.Max);
 
             // expand it just a tiny bit just to be safe!
-            float extra = 0.00001f;
+            JFix64 extra = JFix64.EN5;
 
             JVector temp; JVector.Multiply(ref dims, extra, out temp);
             JVector.Subtract(ref result.Min, ref temp, out result.Min);

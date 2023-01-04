@@ -47,7 +47,7 @@ namespace Jitter.Collision
         /// </summary>
         public JBBox AABB;
 
-        public float MinorRandomExtension;
+        public JFix64 MinorRandomExtension;
 
         public int Child1;
         public int Child2;
@@ -80,11 +80,11 @@ namespace Jitter.Collision
         private int _nodeCount;
         private DynamicTreeNode<T>[] _nodes;
 
-        private const float SettingsAABBMultiplier = 2.0f;
+        private static JFix64 SettingsAABBMultiplier = (2 * JFix64.One);
 
         // Added by 'noone' to prevent highly symmetric cases to
         // update the whole tree at once.
-        private float settingsRndExtension = 0.1f;
+        private JFix64 settingsRndExtension = JFix64.EN1;
 
         private int _root;
 
@@ -92,14 +92,14 @@ namespace Jitter.Collision
         public DynamicTreeNode<T>[] Nodes { get { return _nodes; } }
 
         public DynamicTree()
-            : this(0.1f)
+            : this(JFix64.EN1)
         {
         }
 
         /// <summary>
         /// Constructing the tree initializes the node pool.
         /// </summary>
-        public DynamicTree(float rndExtension)
+        public DynamicTree(JFix64 rndExtension)
         {
             settingsRndExtension = rndExtension;
             _root = NullNode;
@@ -115,7 +115,7 @@ namespace Jitter.Collision
             _nodes[_nodeCapacity - 1].ParentOrNext = NullNode;
         }
 
-        Random rnd = new Random();
+        //Random rnd = new Random();
 
         /// <summary>
         /// Create a proxy in the tree as a leaf node. We return the index
@@ -129,7 +129,7 @@ namespace Jitter.Collision
         {
             int proxyId = AllocateNode();
 
-            _nodes[proxyId].MinorRandomExtension = (float)rnd.NextDouble() * settingsRndExtension;
+            _nodes[proxyId].MinorRandomExtension = JFix64.Half * settingsRndExtension;
 
             // Fatten the aabb.
             JVector r = new JVector(_nodes[proxyId].MinorRandomExtension);
@@ -186,11 +186,11 @@ namespace Jitter.Collision
 
             // Predict AABB displacement.
             JVector d = SettingsAABBMultiplier * displacement;
-            //JVector randomExpansion = new JVector((float)rnd.Next(0, 10) * 0.1f, (float)rnd.Next(0, 10) * 0.1f, (float)rnd.Next(0, 10) * 0.1f);
+            //JVector randomExpansion = new JVector((JFix64)rnd.Next(0, 10) * 0.1f, (JFix64)rnd.Next(0, 10) * 0.1f, (JFix64)rnd.Next(0, 10) * 0.1f);
 
             //d += randomExpansion;
 
-            if (d.X < 0.0f)
+            if (d.X < JFix64.Zero)
             {
                 b.Min.X += d.X;
             }
@@ -199,7 +199,7 @@ namespace Jitter.Collision
                 b.Max.X += d.X;
             }
 
-            if (d.Y < 0.0f)
+            if (d.Y < JFix64.Zero)
             {
                 b.Min.Y += d.Y;
             }
@@ -208,7 +208,7 @@ namespace Jitter.Collision
                 b.Max.Y += d.Y;
             }
 
-            if (d.Z < 0.0f)
+            if (d.Z < JFix64.Zero)
             {
                 b.Min.Z += d.Z;
             }
@@ -488,17 +488,17 @@ namespace Jitter.Collision
 
                 _nodes[sibling].LeafCount += 1;
 
-                float siblingArea = _nodes[sibling].AABB.Perimeter;
+                JFix64 siblingArea = _nodes[sibling].AABB.Perimeter;
                 JBBox parentAABB = new JBBox();
                 //parentAABB.Combine(ref _nodes[sibling].AABB, ref leafAABB);
                 JBBox.CreateMerged(ref _nodes[sibling].AABB, ref leafAABB, out _nodes[sibling].AABB);
 
-                float parentArea = parentAABB.Perimeter;
-                float cost1 = 2.0f * parentArea;
+                JFix64 parentArea = parentAABB.Perimeter;
+                JFix64 cost1 = (2 * JFix64.One) * parentArea;
 
-                float inheritanceCost = 2.0f * (parentArea - siblingArea);
+                JFix64 inheritanceCost = (2 * JFix64.One) * (parentArea - siblingArea);
 
-                float cost2;
+                JFix64 cost2;
                 if (_nodes[child1].IsLeaf())
                 {
                     JBBox aabb = new JBBox();
@@ -512,12 +512,12 @@ namespace Jitter.Collision
                     //aabb.Combine(ref leafAABB, ref _nodes[child1].AABB);
                     JBBox.CreateMerged(ref leafAABB, ref _nodes[child1].AABB, out aabb);
 
-                    float oldArea = _nodes[child1].AABB.Perimeter;
-                    float newArea = aabb.Perimeter;
+                    JFix64 oldArea = _nodes[child1].AABB.Perimeter;
+                    JFix64 newArea = aabb.Perimeter;
                     cost2 = (newArea - oldArea) + inheritanceCost;
                 }
 
-                float cost3;
+                JFix64 cost3;
                 if (_nodes[child2].IsLeaf())
                 {
                     JBBox aabb = new JBBox();
@@ -530,8 +530,8 @@ namespace Jitter.Collision
                     JBBox aabb = new JBBox();
                     //aabb.Combine(ref leafAABB, ref _nodes[child2].AABB);
                     JBBox.CreateMerged(ref leafAABB, ref _nodes[child2].AABB, out aabb);
-                    float oldArea = _nodes[child2].AABB.Perimeter;
-                    float newArea = aabb.Perimeter;
+                    JFix64 oldArea = _nodes[child2].AABB.Perimeter;
+                    JFix64 newArea = aabb.Perimeter;
                     cost3 = newArea - oldArea + inheritanceCost;
                 }
 

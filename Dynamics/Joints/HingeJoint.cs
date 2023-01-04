@@ -53,7 +53,7 @@ namespace Jitter.Dynamics.Joints
         {
             worldPointConstraint = new PointOnPoint[2];
 
-            hingeAxis *= 0.5f;
+            hingeAxis *= JFix64.Half;
 
             JVector pos1 = position; JVector.Add(ref pos1,ref hingeAxis,out pos1);
             JVector pos2 = position; JVector.Subtract(ref pos2,ref hingeAxis,out pos2);
@@ -66,7 +66,7 @@ namespace Jitter.Dynamics.Joints
 
         public PointOnPoint PointOnPointConstraint2 { get { return worldPointConstraint[1]; } }
 
-        public float AppliedImpulse { get { return worldPointConstraint[0].AppliedImpulse + worldPointConstraint[1].AppliedImpulse; } }
+        public JFix64 AppliedImpulse { get { return worldPointConstraint[0].AppliedImpulse + worldPointConstraint[1].AppliedImpulse; } }
 
         /// <summary>
         /// Adds the internal constraints of this joint to the world class.

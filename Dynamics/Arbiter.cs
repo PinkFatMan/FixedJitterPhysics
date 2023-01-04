@@ -99,8 +99,28 @@ namespace Jitter.Dynamics
     /// only keeps the best four contacts based on the area spanned by
     /// the contact points.
     /// </summary>
-    public class Arbiter
+    public class Arbiter : IComparable
     {
+        public int CompareTo(object obj) {
+            if (obj is Arbiter) {
+                long a = ((Arbiter)obj).GetHashCode ();
+                long b = GetHashCode ();
+
+                long diff = a - b;
+                if (diff < 0) {
+                    return 1;
+                } else if (diff > 0) {
+                    return -1;
+                }
+            }
+
+            return 0;
+        }
+        
+        public override int GetHashCode()
+        {
+            return Body1.GetHashCode() + Body2.GetHashCode();
+        }
         /// <summary>
         /// The first body.
         /// </summary>
@@ -162,7 +182,7 @@ namespace Jitter.Dynamics
         /// <param name="point2">Point on body2. In world space.</param>
         /// <param name="normal">The normal pointing to body2.</param>
         /// <param name="penetration">The estimated penetration depth.</param>
-        public Contact AddContact(JVector point1, JVector point2, JVector normal, float penetration, 
+        public Contact AddContact(JVector point1, JVector point2, JVector normal, JFix64 penetration, 
             ContactSettings contactSettings)
         {
             JVector relPos1;
@@ -196,7 +216,7 @@ namespace Jitter.Dynamics
             }
         }
 
-        private void ReplaceContact(ref JVector point1, ref JVector point2, ref JVector n, float p, int index,
+        private void ReplaceContact(ref JVector point1, ref JVector point2, ref JVector n, JFix64 p, int index,
             ContactSettings contactSettings)
         {
             Contact contact = contactList[index];
@@ -207,15 +227,15 @@ namespace Jitter.Dynamics
 
         }
 
-        private int GetCacheEntry(ref JVector realRelPos1, float contactBreakThreshold)
+        private int GetCacheEntry(ref JVector realRelPos1, JFix64 contactBreakThreshold)
         {
-            float shortestDist = contactBreakThreshold * contactBreakThreshold;
+            JFix64 shortestDist = contactBreakThreshold * contactBreakThreshold;
             int size = contactList.Count;
             int nearestPoint = -1;
             for (int i = 0; i < size; i++)
             {
                 JVector diffA; JVector.Subtract(ref contactList[i].relativePos1,ref realRelPos1,out diffA);
-                float distToManiPoint = diffA.LengthSquared();
+                JFix64 distToManiPoint = diffA.LengthSquared();
                 if (distToManiPoint < shortestDist)
                 {
                     shortestDist = distToManiPoint;
@@ -226,13 +246,13 @@ namespace Jitter.Dynamics
         }
 
         // sort cached points so most isolated points come first
-        private int SortCachedPoints(ref JVector realRelPos1, float pen)
+        private int SortCachedPoints(ref JVector realRelPos1, JFix64 pen)
         {
             //calculate 4 possible cases areas, and take biggest area
             //also need to keep 'deepest'
 
             int maxPenetrationIndex = -1;
-            float maxPenetration = pen;
+            JFix64 maxPenetration = pen;
             for (int i = 0; i < 4; i++)
             {
                 if (contactList[i].penetration > maxPenetration)
@@ -242,7 +262,7 @@ namespace Jitter.Dynamics
                 }
             }
 
-            float res0 = 0, res1 = 0, res2 = 0, res3 = 0;
+            JFix64 res0 = JFix64.Zero, res1 = JFix64.Zero, res2 = JFix64.Zero, res3 = JFix64.Zero;
             if (maxPenetrationIndex != 0)
             {
                 JVector a0; JVector.Subtract(ref realRelPos1,ref contactList[1].relativePos1,out a0);
@@ -278,10 +298,10 @@ namespace Jitter.Dynamics
             return biggestarea;
         }
 
-        internal static int MaxAxis(float x, float y, float z, float w)
+        internal static int MaxAxis(JFix64 x, JFix64 y, JFix64 z, JFix64 w)
         {
             int maxIndex = -1;
-            float maxVal = float.MinValue;
+            JFix64 maxVal = JFix64.MinValue;
 
             if (x > maxVal) { maxIndex = 0; maxVal = x; }
             if (y > maxVal) { maxIndex = 1; maxVal = y; }

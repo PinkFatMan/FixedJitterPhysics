@@ -49,7 +49,7 @@ namespace Jitter.Collision.Shapes
             UpdateShape();
         }
 
-        public JVector Shift { get { return -1 * this.shifted; } }
+        public JVector Shift { get { return -JFix64.One * this.shifted; } }
 
         public override void CalculateMassInertia()
         {
@@ -65,9 +65,9 @@ namespace Jitter.Collision.Shapes
         /// <param name="result">The result.</param>
         public override void SupportMapping(ref JVector direction, out JVector result)
         {
-            float maxDotProduct = float.MinValue;
+            JFix64 maxDotProduct = JFix64.MinValue;
             int maxIndex = 0;
-            float dotProduct;
+            JFix64 dotProduct;
 
             for (int i = 0; i < vertices.Count; i++)
             {

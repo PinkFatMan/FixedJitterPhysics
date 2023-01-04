@@ -40,36 +40,36 @@ namespace Jitter.Collision
 
         internal IslandManager islandManager;
 
-        internal HashSet<RigidBody> bodies = new HashSet<RigidBody>();
-        internal HashSet<Arbiter> arbiter = new HashSet<Arbiter>();
-        internal HashSet<Constraint> constraints = new HashSet<Constraint>();
+        internal HashList<RigidBody> bodies = new HashList<RigidBody>();
+        internal HashList<Arbiter> arbiter = new HashList<Arbiter>();
+        internal HashList<Constraint> constraints = new HashList<Constraint>();
 
         /// <summary>
         /// Gets a read only list of <see cref="RigidBody"/> which are in contact with each other.
         /// </summary>
-        public ReadOnlyHashset<RigidBody> Bodies { get { return readOnlyBodies; } }
+        public ReadOnlyHashList<RigidBody> Bodies { get { return readOnlyBodies; } }
 
         /// <summary>
         /// Gets a read only list of <see cref="Arbiter"/> which are involved in this island.
         /// </summary>
-        public ReadOnlyHashset<Arbiter> Arbiter { get { return readOnlyArbiter; } }
+        public ReadOnlyHashList<Arbiter> Arbiter { get { return readOnlyArbiter; } }
 
         /// <summary>
         /// Gets a read only list of <see cref="Constraint"/> which are involved in this island.
         /// </summary>
-        public ReadOnlyHashset<Constraint> Constraints { get { return readOnlyConstraints; } }
+        public ReadOnlyHashList<Constraint> Constraints { get { return readOnlyConstraints; } }
 
-        private ReadOnlyHashset<RigidBody> readOnlyBodies;
-        private ReadOnlyHashset<Arbiter> readOnlyArbiter;
-        private ReadOnlyHashset<Constraint> readOnlyConstraints;
+        private ReadOnlyHashList<RigidBody> readOnlyBodies;
+        private ReadOnlyHashList<Arbiter> readOnlyArbiter;
+        private ReadOnlyHashList<Constraint> readOnlyConstraints;
 
         /// Constructor of CollisionIsland class.
         /// </summary>
         public CollisionIsland()
         {
-            readOnlyBodies = new ReadOnlyHashset<RigidBody>(bodies);
-            readOnlyArbiter = new ReadOnlyHashset<Arbiter>(arbiter);
-            readOnlyConstraints = new ReadOnlyHashset<Constraint>(constraints);
+            readOnlyBodies = new ReadOnlyHashList<RigidBody>(bodies);
+            readOnlyArbiter = new ReadOnlyHashList<Arbiter>(arbiter);
+            readOnlyConstraints = new ReadOnlyHashList<Constraint>(constraints);
         }
 
         /// <summary>
@@ -97,7 +97,7 @@ namespace Jitter.Collision
             foreach (RigidBody body in bodies)
             {
                 body.IsActive = active;
-                if (active && !body.IsActive) body.inactiveTime = 0.0f;
+                if (active && !body.IsActive) body.inactiveTime = JFix64.Zero;
             }
 
         }

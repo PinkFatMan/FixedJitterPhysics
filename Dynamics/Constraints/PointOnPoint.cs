@@ -34,8 +34,8 @@ namespace Jitter.Dynamics.Constraints
         private JVector localAnchor1, localAnchor2;
         private JVector r1, r2;
 
-        private float biasFactor = 0.05f;
-        private float softness = 0.01f;
+        private JFix64 biasFactor = (5 * JFix64.EN2);
+        private JFix64 softness = JFix64.EN2;
 
         /// <summary>
         /// Initializes a new instance of the DistanceConstraint class.
@@ -56,22 +56,22 @@ namespace Jitter.Dynamics.Constraints
             JVector.Transform(ref localAnchor2, ref body2.invOrientation, out localAnchor2);
         }
 
-        public float AppliedImpulse { get { return accumulatedImpulse; } }
+        public JFix64 AppliedImpulse { get { return accumulatedImpulse; } }
 
         /// <summary>
         /// Defines how big the applied impulses can get.
         /// </summary>
-        public float Softness { get { return softness; } set { softness = value; } }
+        public JFix64 Softness { get { return softness; } set { softness = value; } }
 
         /// <summary>
         /// Defines how big the applied impulses can get which correct errors.
         /// </summary>
-        public float BiasFactor { get { return biasFactor; } set { biasFactor = value; } }
+        public JFix64 BiasFactor { get { return biasFactor; } set { biasFactor = value; } }
 
-        float effectiveMass = 0.0f;
-        float accumulatedImpulse = 0.0f;
-        float bias;
-        float softnessOverDt;
+        JFix64 effectiveMass = JFix64.Zero;
+        JFix64 accumulatedImpulse = JFix64.Zero;
+        JFix64 bias;
+        JFix64 softnessOverDt;
 
         JVector[] jacobian = new JVector[4];
 
@@ -79,7 +79,7 @@ namespace Jitter.Dynamics.Constraints
         /// Called once before iteration starts.
         /// </summary>
         /// <param name="timestep">The 5simulation timestep</param>
-        public override void PrepareForIteration(float timestep)
+        public override void PrepareForIteration(JFix64 timestep)
         {
             JVector.Transform(ref localAnchor1, ref body1.orientation, out r1);
             JVector.Transform(ref localAnchor2, ref body2.orientation, out r2);
@@ -90,14 +90,14 @@ namespace Jitter.Dynamics.Constraints
 
             JVector.Subtract(ref p2, ref p1, out dp);
 
-            float deltaLength = dp.Length();
+            JFix64 deltaLength = dp.Length();
 
             JVector n = p2 - p1;
-            if (n.LengthSquared() != 0.0f) n.Normalize();
+            if (n.LengthSquared() != JFix64.Zero) n.Normalize();
 
-            jacobian[0] = -1.0f * n;
-            jacobian[1] = -1.0f * (r1 % n);
-            jacobian[2] = 1.0f * n;
+            jacobian[0] = -JFix64.One * n;
+            jacobian[1] = -JFix64.One * (r1 % n);
+            jacobian[2] = JFix64.One * n;
             jacobian[3] = (r2 % n);
 
             effectiveMass = body1.inverseMass + body2.inverseMass
@@ -107,9 +107,9 @@ namespace Jitter.Dynamics.Constraints
             softnessOverDt = softness / timestep;
             effectiveMass += softnessOverDt;
 
-            effectiveMass = 1.0f / effectiveMass;
+            effectiveMass = JFix64.One / effectiveMass;
 
-            bias = deltaLength * biasFactor * (1.0f / timestep);
+            bias = deltaLength * biasFactor * (JFix64.One / timestep);
 
             if (!body1.isStatic)
             {
@@ -131,15 +131,15 @@ namespace Jitter.Dynamics.Constraints
         /// </summary>
         public override void Iterate()
         {
-            float jv =
+            JFix64 jv =
                 body1.linearVelocity * jacobian[0] +
                 body1.angularVelocity * jacobian[1] +
                 body2.linearVelocity * jacobian[2] +
                 body2.angularVelocity * jacobian[3];
 
-            float softnessScalar = accumulatedImpulse * softnessOverDt;
+            JFix64 softnessScalar = accumulatedImpulse * softnessOverDt;
 
-            float lambda = -effectiveMass * (jv + bias + softnessScalar);
+            JFix64 lambda = -effectiveMass * (jv + bias + softnessScalar);
 
             accumulatedImpulse += lambda;
 

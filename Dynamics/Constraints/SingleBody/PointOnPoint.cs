@@ -36,8 +36,8 @@ namespace Jitter.Dynamics.Constraints.SingleBody
 
         private JVector r1;
 
-        private float biasFactor = 0.1f;
-        private float softness = 0.01f;
+        private JFix64 biasFactor = JFix64.EN1;
+        private JFix64 softness = JFix64.EN2;
 
         /// <summary>
         /// Initializes a new instance of the DistanceConstraint class.
@@ -56,12 +56,12 @@ namespace Jitter.Dynamics.Constraints.SingleBody
             this.anchor = body.position + JVector.Transform(localAnchor, body.orientation);
         }
 
-        public float AppliedImpulse { get { return accumulatedImpulse; } }
+        public JFix64 AppliedImpulse { get { return accumulatedImpulse; } }
 
         /// <summary>
         /// Defines how big the applied impulses can get.
         /// </summary>
-        public float Softness { get { return softness; } set { softness = value; } }
+        public JFix64 Softness { get { return softness; } set { softness = value; } }
 
         /// <summary>
         /// The anchor point in the world.
@@ -72,12 +72,12 @@ namespace Jitter.Dynamics.Constraints.SingleBody
         /// <summary>
         /// Defines how big the applied impulses can get which correct errors.
         /// </summary>
-        public float BiasFactor { get { return biasFactor; } set { biasFactor = value; } }
+        public JFix64 BiasFactor { get { return biasFactor; } set { biasFactor = value; } }
 
-        float effectiveMass = 0.0f;
-        float accumulatedImpulse = 0.0f;
-        float bias;
-        float softnessOverDt;
+        JFix64 effectiveMass = JFix64.Zero;
+        JFix64 accumulatedImpulse = JFix64.Zero;
+        JFix64 bias;
+        JFix64 softnessOverDt;
 
         JVector[] jacobian = new JVector[2];
 
@@ -85,29 +85,29 @@ namespace Jitter.Dynamics.Constraints.SingleBody
         /// Called once before iteration starts.
         /// </summary>
         /// <param name="timestep">The 5simulation timestep</param>
-        public override void PrepareForIteration(float timestep)
+        public override void PrepareForIteration(JFix64 timestep)
         {
             JVector p1,dp;
             JVector.Transform(ref localAnchor1, ref body1.orientation, out r1);
             JVector.Add(ref body1.position, ref r1, out p1);
 
             JVector.Subtract(ref p1, ref anchor, out dp);
-            float deltaLength = dp.Length();
+            JFix64 deltaLength = dp.Length();
 
             JVector n = anchor - p1;
-            if (n.LengthSquared() != 0.0f) n.Normalize();
+            if (n.LengthSquared() != JFix64.Zero) n.Normalize();
 
-            jacobian[0] = -1.0f * n;
-            jacobian[1] = -1.0f * (r1 % n);
+            jacobian[0] = -JFix64.One * n;
+            jacobian[1] = -JFix64.One * (r1 % n);
 
             effectiveMass = body1.inverseMass + JVector.Transform(jacobian[1], body1.invInertiaWorld) * jacobian[1];
 
             softnessOverDt = softness / timestep;
             effectiveMass += softnessOverDt;
 
-            effectiveMass = 1.0f / effectiveMass;
+            effectiveMass = JFix64.One / effectiveMass;
 
-            bias = deltaLength * biasFactor * (1.0f / timestep);
+            bias = deltaLength * biasFactor * (JFix64.One / timestep);
 
             if (!body1.isStatic)
             {
@@ -121,13 +121,13 @@ namespace Jitter.Dynamics.Constraints.SingleBody
         /// </summary>
         public override void Iterate()
         {
-            float jv =
+            JFix64 jv =
                 body1.linearVelocity * jacobian[0] +
                 body1.angularVelocity * jacobian[1];
 
-            float softnessScalar = accumulatedImpulse * softnessOverDt;
+            JFix64 softnessScalar = accumulatedImpulse * softnessOverDt;
 
-            float lambda = -effectiveMass * (jv + bias + softnessScalar);
+            JFix64 lambda = -effectiveMass * (jv + bias + softnessScalar);
 
             accumulatedImpulse += lambda;
 

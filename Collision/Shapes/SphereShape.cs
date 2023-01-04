@@ -34,18 +34,18 @@ namespace Jitter.Collision.Shapes
     /// </summary>
     public class SphereShape : Shape
     {
-        private float radius = 1.0f;
+        private JFix64 radius = JFix64.One;
 
         /// <summary>
         /// The radius of the sphere.
         /// </summary>
-        public float Radius { get { return radius; } set { radius = value; UpdateShape(); } }
+        public JFix64 Radius { get { return radius; } set { radius = value; UpdateShape(); } }
 
         /// <summary>
         /// Creates a new instance of the SphereShape class.
         /// </summary>
         /// <param name="radius">The radius of the sphere</param>
-        public SphereShape(float radius)
+        public SphereShape(JFix64 radius)
         {
             this.radius = radius;
             this.UpdateShape();
@@ -86,14 +86,14 @@ namespace Jitter.Collision.Shapes
         /// </summary>
         public override void CalculateMassInertia()
         {
-            mass = (4.0f / 3.0f) * JMath.Pi * radius * radius * radius;
+            mass = ((4 * JFix64.One) / (3 * JFix64.One)) * JFix64Math.Pi * radius * radius * radius;
 
             // (0,0,0) is the center of mass, so only
             // the main matrix elements are != 0
             inertia = JMatrix.Identity;
-            inertia.M11 = 0.4f * this.mass * radius * radius;
-            inertia.M22 = 0.4f * this.mass * radius * radius;
-            inertia.M33 = 0.4f * this.mass * radius * radius;
+            inertia.M11 = (4 * JFix64.EN1) * this.mass * radius * radius;
+            inertia.M22 = (4 * JFix64.EN1) * this.mass * radius * radius;
+            inertia.M33 = (4 * JFix64.EN1) * this.mass * radius * radius;
         }
 
 

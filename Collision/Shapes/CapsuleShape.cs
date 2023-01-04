@@ -34,24 +34,24 @@ namespace Jitter.Collision.Shapes
     /// </summary>
     public class CapsuleShape : Shape
     {
-        private float length, radius;
+        private JFix64 length, radius;
 
         /// <summary>
         /// Gets or sets the length of the capsule (exclusive the round endcaps).
         /// </summary>
-        public float Length { get { return length; } set { length = value; UpdateShape(); } }
+        public JFix64 Length { get { return length; } set { length = value; UpdateShape(); } }
 
         /// <summary>
         /// Gets or sets the radius of the endcaps.
         /// </summary>
-        public float Radius { get { return radius; } set { radius = value; UpdateShape(); } }
+        public JFix64 Radius { get { return radius; } set { radius = value; UpdateShape(); } }
 
         /// <summary>
         /// Create a new instance of the capsule.
         /// </summary>
         /// <param name="length">The length of the capsule (exclusive the round endcaps).</param>
         /// <param name="radius">The radius of the endcaps.</param>
-        public CapsuleShape(float length,float radius)
+        public CapsuleShape(JFix64 length,JFix64 radius)
         {
             this.length = length;
             this.radius = radius;
@@ -63,14 +63,14 @@ namespace Jitter.Collision.Shapes
         /// </summary>
         public override void CalculateMassInertia()
         {
-            float massSphere = (4.0f / 3.0f) * JMath.Pi * radius * radius * radius;
-            float massCylinder = JMath.Pi * radius * radius * length;
+            JFix64 massSphere = ((4 * JFix64.One) / (3 * JFix64.One)) * JFix64Math.Pi * radius * radius * radius;
+            JFix64 massCylinder = JFix64Math.Pi * radius * radius * length;
 
             mass = massCylinder + massSphere;
 
-            this.inertia.M11 = (1.0f / 4.0f) * massCylinder * radius * radius + (1.0f / 12.0f) * massCylinder * length * length + (2.0f / 5.0f) * massSphere * radius * radius + (1.0f / 4.0f) * length * length * massSphere;
-            this.inertia.M22 = (1.0f / 2.0f) * massCylinder * radius * radius + (2.0f / 5.0f) * massSphere * radius * radius;
-            this.inertia.M33 = (1.0f / 4.0f) * massCylinder * radius * radius + (1.0f / 12.0f) * massCylinder * length * length + (2.0f / 5.0f) * massSphere * radius * radius + (1.0f / 4.0f) * length * length * massSphere;
+            this.inertia.M11 = (JFix64.One / (4 * JFix64.One)) * massCylinder * radius * radius + (JFix64.One / (12 * JFix64.One)) * massCylinder * length * length + ((2 * JFix64.One) / (5 * JFix64.One)) * massSphere * radius * radius + (JFix64.One / (4 * JFix64.One)) * length * length * massSphere;
+            this.inertia.M22 = (JFix64.One / (2 * JFix64.One)) * massCylinder * radius * radius + ((2 * JFix64.One) / (5 * JFix64.One)) * massSphere * radius * radius;
+            this.inertia.M33 = (JFix64.One / (4 * JFix64.One)) * massCylinder * radius * radius + (JFix64.One / (12 * JFix64.One)) * massCylinder * length * length + ((2 * JFix64.One) / (5 * JFix64.One)) * massSphere * radius * radius + (JFix64.One / (4 * JFix64.One)) * length * length * massSphere;
 
             //this.inertia.M11 = (1.0f / 4.0f) * mass * radius * radius + (1.0f / 12.0f) * mass * height * height;
             //this.inertia.M22 = (1.0f / 2.0f) * mass * radius * radius;
@@ -87,25 +87,25 @@ namespace Jitter.Collision.Shapes
         /// <param name="result">The result.</param>
         public override void SupportMapping(ref JVector direction, out JVector result)
         {
-            float r = (float)Math.Sqrt(direction.X * direction.X + direction.Z * direction.Z);
+            JFix64 r = JFix64Math.Sqrt(direction.X * direction.X + direction.Z * direction.Z);
 
-            if (Math.Abs(direction.Y) > 0.0f)
+            if (JFix64Math.Abs(direction.Y) > JFix64.Zero)
             {
                 JVector dir; JVector.Normalize(ref direction, out dir);
                 JVector.Multiply(ref dir, radius, out result);
-                result.Y += Math.Sign(direction.Y) * 0.5f * length;              
+                result.Y += JFix64Math.Sign(direction.Y) * JFix64.Half * length;              
             }
-            else if (r > 0.0f)
+            else if (r > JFix64.Zero)
             {
                 result.X = direction.X / r * radius;
-                result.Y = 0.0f;
+                result.Y = JFix64.Zero;
                 result.Z = direction.Z / r * radius;
             }
             else
             {
-                result.X = 0.0f;
-                result.Y = 0.0f;
-                result.Z = 0.0f;
+                result.X = JFix64.Zero;
+                result.Y = JFix64.Zero;
+                result.Z = JFix64.Zero;
             }
         }
     }

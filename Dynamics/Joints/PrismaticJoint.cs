@@ -51,7 +51,7 @@ namespace Jitter.Dynamics.Joints
             pointOnLine = new PointOnLine(body1, body2, body1.position, body2.position);
         }
 
-        public PrismaticJoint(World world, RigidBody body1, RigidBody body2,float minimumDistance, float maximumDistance)
+        public PrismaticJoint(World world, RigidBody body1, RigidBody body2,JFix64 minimumDistance, JFix64 maximumDistance)
             : base(world)
         {
             fixedAngle = new FixedAngle(body1, body2);
@@ -75,7 +75,7 @@ namespace Jitter.Dynamics.Joints
         }
 
 
-        public PrismaticJoint(World world, RigidBody body1, RigidBody body2, JVector pointOnBody1, JVector pointOnBody2, float maximumDistance, float minimumDistance)
+        public PrismaticJoint(World world, RigidBody body1, RigidBody body2, JVector pointOnBody1, JVector pointOnBody2, JFix64 maximumDistance, JFix64 minimumDistance)
             : base(world)
         {
             fixedAngle = new FixedAngle(body1, body2);

@@ -34,8 +34,8 @@ namespace Jitter.Collision.Shapes
     /// </summary>
     public class TerrainShape : Multishape
     {
-        private float[,] heights;
-        private float scaleX, scaleZ;
+        private JFix64[,] heights;
+        private JFix64 scaleX, scaleZ;
         private int heightsLength0, heightsLength1;
 
         private int minX, maxX;
@@ -44,13 +44,13 @@ namespace Jitter.Collision.Shapes
 
         private JBBox boundings;
 
-        private float sphericalExpansion = 0.05f;
+        private JFix64 sphericalExpansion = (5 * JFix64.EN2);
 
         /// <summary>
         /// Expands the triangles by the specified amount.
         /// This stabilizes collision detection for flat shapes.
         /// </summary>
-        public float SphericalExpansion
+        public JFix64 SphericalExpansion
         {
             get { return sphericalExpansion; }
             set { sphericalExpansion = value; }
@@ -62,7 +62,7 @@ namespace Jitter.Collision.Shapes
         /// <param name="heights">An array containing the heights of the terrain surface.</param>
         /// <param name="scaleX">The x-scale factor. (The x-space between neighbour heights)</param>
         /// <param name="scaleZ">The y-scale factor. (The y-space between neighbour heights)</param>
-        public TerrainShape(float[,] heights, float scaleX, float scaleZ)
+        public TerrainShape(JFix64[,] heights, JFix64 scaleX, JFix64 scaleZ)
         {
             heightsLength0 = heights.GetLength(0);
             heightsLength1 = heights.GetLength(1);
@@ -81,8 +81,8 @@ namespace Jitter.Collision.Shapes
                 }
             }
 
-            boundings.Min.X = 0.0f;
-            boundings.Min.Z = 0.0f;
+            boundings.Min.X = JFix64.Zero;
+            boundings.Min.Z = JFix64.Zero;
 
             boundings.Max.X = checked(heightsLength0 * scaleX);
             boundings.Max.Z = checked(heightsLength1 * scaleZ);
@@ -151,7 +151,7 @@ namespace Jitter.Collision.Shapes
             JVector sum = points[0];
             JVector.Add(ref sum, ref points[1], out sum);
             JVector.Add(ref sum, ref points[2], out sum);
-            JVector.Multiply(ref sum, 1.0f / 3.0f, out sum);
+            JVector.Multiply(ref sum, JFix64.One / (3 * JFix64.One), out sum);
             geomCen = sum;
 
             JVector.Subtract(ref points[1], ref points[0], out sum);
@@ -183,28 +183,28 @@ namespace Jitter.Collision.Shapes
             if (box.Min.X < boundings.Min.X) minX = 0;
             else
             {
-                minX = (int)Math.Floor((float)((box.Min.X - sphericalExpansion) / scaleX));
+                minX = (int)JFix64Math.Floor(((box.Min.X - sphericalExpansion) / scaleX));
                 minX = Math.Max(minX, 0);
             }
 
             if (box.Max.X > boundings.Max.X) maxX = heightsLength0 - 1;
             else
             {
-                maxX = (int)Math.Ceiling((float)((box.Max.X + sphericalExpansion) / scaleX));
+                maxX = (int)JFix64Math.Ceiling(((box.Max.X + sphericalExpansion) / scaleX));
                 maxX = Math.Min(maxX, heightsLength0 - 1);
             }
 
             if (box.Min.Z < boundings.Min.Z) minZ = 0;
             else
             {
-                minZ = (int)Math.Floor((float)((box.Min.Z - sphericalExpansion) / scaleZ));
+                minZ = (int)JFix64Math.Floor(((box.Min.Z - sphericalExpansion) / scaleZ));
                 minZ = Math.Max(minZ, 0);
             }
 
             if (box.Max.Z > boundings.Max.Z) maxZ = heightsLength1 - 1;
             else
             {
-                maxZ = (int)Math.Ceiling((float)((box.Max.Z + sphericalExpansion) / scaleZ));
+                maxZ = (int)JFix64Math.Ceiling(((box.Max.Z + sphericalExpansion) / scaleZ));
                 maxZ = Math.Min(maxZ, heightsLength1 - 1);
             }
 
@@ -221,7 +221,7 @@ namespace Jitter.Collision.Shapes
         public override void CalculateMassInertia()
         {
             this.inertia = JMatrix.Identity;
-            this.Mass = 1.0f;
+            this.Mass = JFix64.One;
         }
 
         /// <summary>
@@ -277,8 +277,8 @@ namespace Jitter.Collision.Shapes
             JVector.Multiply(ref expandVector, sphericalExpansion, out expandVector);
 
             int minIndex = 0;
-            float min = JVector.Dot(ref points[0], ref direction);
-            float dot = JVector.Dot(ref points[1], ref direction);
+            JFix64 min = JVector.Dot(ref points[0], ref direction);
+            JFix64 dot = JVector.Dot(ref points[1], ref direction);
             if (dot > min)
             {
                 min = dot;

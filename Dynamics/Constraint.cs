@@ -32,7 +32,7 @@ namespace Jitter.Dynamics.Constraints
 
     public interface IConstraint
     {
-        void PrepareForIteration(float timestep);
+        void PrepareForIteration(JFix64 timestep);
         void Iterate();
 
         RigidBody Body1 { get; }
@@ -88,7 +88,7 @@ namespace Jitter.Dynamics.Constraints
         /// Called once before iteration starts.
         /// </summary>
         /// <param name="timestep">The simulation timestep</param>
-        public abstract void PrepareForIteration(float timestep);
+        public abstract void PrepareForIteration(JFix64 timestep);
 
         /// <summary>
         /// Iteratively solve this constraint.

@@ -61,14 +61,14 @@ namespace Jitter.Dynamics
 
         internal JBBox boundingBox;
 
-        internal float inactiveTime = 0.0f;
+        internal JFix64 inactiveTime = JFix64.Zero;
 
         internal bool isActive = true;
         internal bool isStatic = false;
         internal bool affectedByGravity = true;
 
         internal CollisionIsland island;
-        internal float inverseMass;
+        internal JFix64 inverseMass;
 
         internal JVector force, torque;
 
@@ -80,11 +80,11 @@ namespace Jitter.Dynamics
 
         internal List<RigidBody> connections = new List<RigidBody>();
 
-        internal HashSet<Arbiter> arbiters = new HashSet<Arbiter>();
-        internal HashSet<Constraint> constraints = new HashSet<Constraint>();
+        internal HashList<Arbiter> arbiters = new HashList<Arbiter>();
+        internal HashList<Constraint> constraints = new HashList<Constraint>();
 
-        private ReadOnlyHashset<Arbiter> readOnlyArbiters;
-        private ReadOnlyHashset<Constraint> readOnlyConstraints;
+        private ReadOnlyHashList<Arbiter> readOnlyArbiters;
+        private ReadOnlyHashList<Constraint> readOnlyConstraints;
 
         internal int marker = 0;
 
@@ -115,7 +115,7 @@ namespace Jitter.Dynamics
                     this.inertia = JMatrix.Zero;
                     this.invInertia = this.invInertiaWorld = JMatrix.Zero;
                     this.invOrientation = this.orientation = JMatrix.Identity;
-                    inverseMass = 1.0f;
+                    inverseMass = JFix64.One;
 
                     this.Shape.ShapeUpdated -= updatedHandler;
 
@@ -143,8 +143,8 @@ namespace Jitter.Dynamics
         /// Also contacts are only solved for the linear motion part.</param>
         public RigidBody(Shape shape, Material material, bool isParticle)
         {
-            readOnlyArbiters = new ReadOnlyHashset<Arbiter>(arbiters);
-            readOnlyConstraints = new ReadOnlyHashset<Constraint>(constraints);
+            readOnlyArbiters = new ReadOnlyHashList<Arbiter>(arbiters);
+            readOnlyConstraints = new ReadOnlyHashList<Constraint>(constraints);
 
             instance = Interlocked.Increment(ref instanceCount);
             hashCode = CalculateHash(instance);
@@ -163,7 +163,7 @@ namespace Jitter.Dynamics
                 this.inertia = JMatrix.Zero;
                 this.invInertia = this.invInertiaWorld = JMatrix.Zero;
                 this.invOrientation = this.orientation = JMatrix.Identity;
-                inverseMass = 1.0f;
+                inverseMass = JFix64.One;
             }
 
             this.material = material;
@@ -187,8 +187,8 @@ namespace Jitter.Dynamics
             return hashCode;
         }
 
-        public ReadOnlyHashset<Arbiter> Arbiters { get { return readOnlyArbiters; } }
-        public ReadOnlyHashset<Constraint> Constraints { get { return readOnlyConstraints; } }
+        public ReadOnlyHashList<Arbiter> Arbiters { get { return readOnlyArbiters; } }
+        public ReadOnlyHashList<Constraint> Constraints { get { return readOnlyConstraints; } }
 
         /// <summary>
         /// If set to false the body will never be deactived by the
@@ -237,12 +237,12 @@ namespace Jitter.Dynamics
                 if (!isActive && value)
                 {
                     // if inactive and should be active
-                    inactiveTime = 0.0f;
+                    inactiveTime = JFix64.Zero;
                 }
                 else if (isActive && !value)
                 {
                     // if active and should be inactive
-                    inactiveTime = float.PositiveInfinity;
+                    inactiveTime = JFix64.PositiveInfinity;
                     this.angularVelocity.MakeZero();
                     this.linearVelocity.MakeZero();
                 }
@@ -346,7 +346,7 @@ namespace Jitter.Dynamics
         {
             this.inertia = Shape.inertia;
             JMatrix.Inverse(ref inertia, out invInertia);
-            this.inverseMass = 1.0f / Shape.mass;
+            this.inverseMass = JFix64.One / Shape.mass;
             useShapeMassProperties = true;
         }
 
@@ -358,7 +358,7 @@ namespace Jitter.Dynamics
         /// <param name="mass">The mass/inverse mass of the object.</param>
         /// <param name="setAsInverseValues">Sets the InverseInertia and the InverseMass
         /// to this values.</param>
-        public void SetMassProperties(JMatrix inertia, float mass, bool setAsInverseValues)
+        public void SetMassProperties(JMatrix inertia, JFix64 mass, bool setAsInverseValues)
         {
             if (setAsInverseValues)
             {
@@ -376,7 +376,7 @@ namespace Jitter.Dynamics
                     this.inertia = inertia;
                     JMatrix.Inverse(ref inertia, out this.invInertia);
                 }
-                this.inverseMass = 1.0f / mass;
+                this.inverseMass = JFix64.One / mass;
             }
 
             useShapeMassProperties = false;
@@ -519,12 +519,12 @@ namespace Jitter.Dynamics
         /// Setting the mass automatically scales the inertia.
         /// To set the mass indepedently from the mass use SetMassProperties.
         /// </summary>
-        public float Mass
+        public JFix64 Mass
         {
-            get { return 1.0f / inverseMass; }
+            get { return JFix64.One / inverseMass; }
             set 
             {
-                if (value <= 0.0f) throw new ArgumentException("Mass can't be less or equal zero.");
+                if (value <= JFix64.Zero) throw new ArgumentException("Mass can't be less or equal zero.");
 
                 // scale inertia
                 if (!isParticle)
@@ -533,7 +533,7 @@ namespace Jitter.Dynamics
                     JMatrix.Inverse(ref inertia, out invInertia);
                 }
 
-                inverseMass = 1.0f / value;
+                inverseMass = JFix64.One / value;
             }
         }
 
@@ -542,11 +542,11 @@ namespace Jitter.Dynamics
 
         internal JVector sweptDirection = JVector.Zero;
 
-        public void SweptExpandBoundingBox(float timestep)
+        public void SweptExpandBoundingBox(JFix64 timestep)
         {
             sweptDirection = linearVelocity * timestep;
 
-            if (sweptDirection.X < 0.0f)
+            if (sweptDirection.X < JFix64.Zero)
             {
                 boundingBox.Min.X += sweptDirection.X;
             }
@@ -555,7 +555,7 @@ namespace Jitter.Dynamics
                 boundingBox.Max.X += sweptDirection.X;
             }
 
-            if (sweptDirection.Y < 0.0f)
+            if (sweptDirection.Y < JFix64.Zero)
             {
                 boundingBox.Min.Y += sweptDirection.Y;
             }
@@ -564,7 +564,7 @@ namespace Jitter.Dynamics
                 boundingBox.Max.Y += sweptDirection.Y;
             }
 
-            if (sweptDirection.Z < 0.0f)
+            if (sweptDirection.Z < JFix64.Zero)
             {
                 boundingBox.Min.Z += sweptDirection.Z;
             }
@@ -623,12 +623,12 @@ namespace Jitter.Dynamics
         public int BroadphaseTag { get; set; }
 
 
-        public virtual void PreStep(float timestep)
+        public virtual void PreStep(JFix64 timestep)
         {
             //
         }
 
-        public virtual void PostStep(float timestep)
+        public virtual void PostStep(JFix64 timestep)
         {
             //
         }

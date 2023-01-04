@@ -39,8 +39,8 @@ namespace Jitter.Dynamics.Constraints.SingleBody
         private JVector lineNormal = JVector.Right;
         private JVector anchor;
 
-        private float biasFactor = 0.5f;
-        private float softness = 0.0f;
+        private JFix64 biasFactor = JFix64.Half;
+        private JFix64 softness = JFix64.Zero;
 
         /// <summary>
         /// Initializes a new instance of the WorldLineConstraint.
@@ -52,7 +52,7 @@ namespace Jitter.Dynamics.Constraints.SingleBody
         public PointOnLine(RigidBody body, JVector localAnchor, JVector lineDirection)
             : base(body, null)
         {
-            if (lineDirection.LengthSquared() == 0.0f)
+            if (lineDirection.LengthSquared() == JFix64.Zero)
                 throw new ArgumentException("Line direction can't be zero", "lineDirection");
 
             localAnchor1 = localAnchor;
@@ -75,17 +75,17 @@ namespace Jitter.Dynamics.Constraints.SingleBody
         /// <summary>
         /// Defines how big the applied impulses can get.
         /// </summary>
-        public float Softness { get { return softness; } set { softness = value; } }
+        public JFix64 Softness { get { return softness; } set { softness = value; } }
 
         /// <summary>
         /// Defines how big the applied impulses can get which correct errors.
         /// </summary>
-        public float BiasFactor { get { return biasFactor; } set { biasFactor = value; } }
+        public JFix64 BiasFactor { get { return biasFactor; } set { biasFactor = value; } }
 
-        float effectiveMass = 0.0f;
-        float accumulatedImpulse = 0.0f;
-        float bias;
-        float softnessOverDt;
+        JFix64 effectiveMass = JFix64.Zero;
+        JFix64 accumulatedImpulse = JFix64.Zero;
+        JFix64 bias;
+        JFix64 softnessOverDt;
 
         JVector[] jacobian = new JVector[2];
 
@@ -93,7 +93,7 @@ namespace Jitter.Dynamics.Constraints.SingleBody
         /// Called once before iteration starts.
         /// </summary>
         /// <param name="timestep">The simulation timestep</param>
-        public override void PrepareForIteration(float timestep)
+        public override void PrepareForIteration(JFix64 timestep)
         {
             JVector.Transform(ref localAnchor1, ref body1.orientation, out r1);
 
@@ -105,7 +105,7 @@ namespace Jitter.Dynamics.Constraints.SingleBody
             JVector l = lineNormal;
 
             JVector t = (p1 - anchor) % l;
-            if (t.LengthSquared() != 0.0f) t.Normalize();
+            if (t.LengthSquared() != JFix64.Zero) t.Normalize();
             t = t % l;
 
             jacobian[0] = t;
@@ -117,9 +117,9 @@ namespace Jitter.Dynamics.Constraints.SingleBody
             softnessOverDt = softness / timestep;
             effectiveMass += softnessOverDt;
 
-            if (effectiveMass != 0) effectiveMass = 1.0f / effectiveMass;
+            if (effectiveMass != JFix64.Zero) effectiveMass = JFix64.One / effectiveMass;
 
-            bias = -(l % (p1 - anchor)).Length() * biasFactor * (1.0f / timestep);
+            bias = -(l % (p1 - anchor)).Length() * biasFactor * (JFix64.One / timestep);
 
             if (!body1.isStatic)
             {
@@ -134,13 +134,13 @@ namespace Jitter.Dynamics.Constraints.SingleBody
         /// </summary>
         public override void Iterate()
         {
-            float jv =
+            JFix64 jv =
                 body1.linearVelocity * jacobian[0] +
                 body1.angularVelocity * jacobian[1];
 
-            float softnessScalar = accumulatedImpulse * softnessOverDt;
+            JFix64 softnessScalar = accumulatedImpulse * softnessOverDt;
 
-            float lambda = -effectiveMass * (jv + bias + softnessScalar);
+            JFix64 lambda = -effectiveMass * (jv + bias + softnessScalar);
 
             accumulatedImpulse += lambda;
 
@@ -153,7 +153,7 @@ namespace Jitter.Dynamics.Constraints.SingleBody
 
         public override void DebugDraw(IDebugDrawer drawer)
         {
-            drawer.DrawLine(anchor - lineNormal * 50.0f, anchor + lineNormal * 50.0f);
+            drawer.DrawLine(anchor - lineNormal * (50 * JFix64.One), anchor + lineNormal * (50 * JFix64.One));
             drawer.DrawLine(body1.position, body1.position + r1);
         }
 

@@ -51,7 +51,7 @@ namespace Jitter.Collision
     /// <seealso cref="CollisionSystem.Detect(bool)"/>
     /// <seealso cref="CollisionSystem.Detect(RigidBody,RigidBody)"/>
     public delegate void CollisionDetectedHandler(RigidBody body1,RigidBody body2, 
-                    JVector point1, JVector point2, JVector normal,float penetration);
+                    JVector point1, JVector point2, JVector normal,JFix64 penetration);
 
     /// <summary>
     /// A delegate to inform the user that a pair of bodies passed the broadsphase
@@ -72,7 +72,7 @@ namespace Jitter.Collision
     /// <returns>If false is returned the collision information is dropped. The CollisionDetectedHandler
     /// is never called.</returns>
     public delegate bool PassedNarrowphaseHandler(RigidBody body1,RigidBody body2, 
-                    ref JVector point, ref JVector normal,float penetration);
+                    ref JVector point, ref JVector normal,JFix64 penetration);
 
     /// <summary>
     /// A delegate for raycasting.
@@ -82,7 +82,7 @@ namespace Jitter.Collision
     /// <param name="fraction">The fraction which gives information where at the 
     /// ray the collision occured. The hitPoint is calculated by: rayStart+friction*direction.</param>
     /// <returns>If false is returned the collision information is dropped.</returns>
-    public delegate bool RaycastCallback(RigidBody body,JVector normal, float fraction);
+    public delegate bool RaycastCallback(RigidBody body,JVector normal, JFix64 fraction);
 
     /// <summary>
     /// CollisionSystem. Used by the world class to detect all collisions. 
@@ -229,7 +229,7 @@ namespace Jitter.Collision
                 SoftBody.Triangle otherTriangle = body2.dynamicTree.GetUserData(other[i]);
 
                 JVector point, normal;
-                float penetration;
+                JFix64 penetration;
                 bool result;
 
                 result = XenoCollide.Detect(myTriangle, otherTriangle, ref JMatrix.InternalIdentity, ref JMatrix.InternalIdentity,
@@ -260,7 +260,7 @@ namespace Jitter.Collision
                 (body1.EnableSpeculativeContacts || body2.EnableSpeculativeContacts);
 
             JVector point, normal;
-            float penetration;
+            JFix64 penetration;
 
             if (!b1IsMulti && !b2IsMulti)
             {
@@ -285,7 +285,7 @@ namespace Jitter.Collision
                         {
                             penetration = delta * normal;
 
-                            if (penetration < 0.0f)
+                            if (penetration < JFix64.Zero)
                             {
                                 RaiseCollisionDetected(body1, body2, ref hit1, ref hit2, ref normal, penetration);
                             }
@@ -349,7 +349,7 @@ namespace Jitter.Collision
                                 {
                                     penetration = delta * normal;
 
-                                    if (penetration < 0.0f)
+                                    if (penetration < JFix64.Zero)
                                     {
                                         RaiseCollisionDetected(body1, body2, ref hit1, ref hit2, ref normal, penetration);
                                     }
@@ -424,7 +424,7 @@ namespace Jitter.Collision
                             {
                                 penetration = delta * normal;
 
-                                if (penetration < 0.0f)
+                                if (penetration < JFix64.Zero)
                                 {
                                     RaiseCollisionDetected(b1, b2, ref hit1, ref hit2, ref normal, penetration);
                                 }
@@ -457,7 +457,7 @@ namespace Jitter.Collision
                     SoftBody.Triangle t = softBody.dynamicTree.GetUserData(i);
 
                     JVector point, normal;
-                    float penetration;
+                    JFix64 penetration;
                     bool result;
 
                     for (int e = 0; e < msLength; e++)
@@ -491,7 +491,7 @@ namespace Jitter.Collision
                     SoftBody.Triangle t = softBody.dynamicTree.GetUserData(i);
 
                     JVector point, normal;
-                    float penetration;
+                    JFix64 penetration;
                     bool result;
 
                     result = XenoCollide.Detect(rigidBody.Shape, t, ref rigidBody.orientation, ref JMatrix.InternalIdentity,
@@ -519,17 +519,17 @@ namespace Jitter.Collision
             p = sb.VertexBodies[triangle.indices.I0].position;
             JVector.Subtract(ref p, ref point, out p);
 
-            float length0 = p.LengthSquared();
+            JFix64 length0 = p.LengthSquared();
 
             p = sb.VertexBodies[triangle.indices.I1].position;
             JVector.Subtract(ref p, ref point, out p);
 
-            float length1 = p.LengthSquared();
+            JFix64 length1 = p.LengthSquared();
 
             p = sb.VertexBodies[triangle.indices.I2].position;
             JVector.Subtract(ref p, ref point, out p);
 
-            float length2 = p.LengthSquared();
+            JFix64 length2 = p.LengthSquared();
 
             if (length0 < length1)
             {
@@ -556,8 +556,8 @@ namespace Jitter.Collision
             JVector.Subtract(ref sA, ref point, out sA);
             JVector.Subtract(ref sB, ref point, out sB);
 
-            float dot1 = JVector.Dot(ref sA, ref normal);
-            float dot2 = JVector.Dot(ref sB, ref normal);
+            JFix64 dot1 = JVector.Dot(ref sA, ref normal);
+            JFix64 dot2 = JVector.Dot(ref sB, ref normal);
 
             JVector.Multiply(ref normal, dot1, out sA);
             JVector.Multiply(ref normal, dot2, out sB);
@@ -582,14 +582,14 @@ namespace Jitter.Collision
         /// against rays (rays are of infinite length). They are checked against segments
         /// which start at rayOrigin and end in rayOrigin + rayDirection.
         /// </summary>
-        public abstract bool Raycast(JVector rayOrigin, JVector rayDirection, RaycastCallback raycast, out RigidBody body, out JVector normal,out float fraction);
+        public abstract bool Raycast(JVector rayOrigin, JVector rayDirection, RaycastCallback raycast, out RigidBody body, out JVector normal,out JFix64 fraction);
 
         /// <summary>
         /// Raycasts a single body. NOTE: For performance reasons terrain and trianglemeshshape aren't checked
         /// against rays (rays are of infinite length). They are checked against segments
         /// which start at rayOrigin and end in rayOrigin + rayDirection.
         /// </summary>
-        public abstract bool Raycast(RigidBody body, JVector rayOrigin, JVector rayDirection, out JVector normal, out float fraction);
+        public abstract bool Raycast(RigidBody body, JVector rayOrigin, JVector rayDirection, out JVector normal, out JFix64 fraction);
 
 
         /// <summary>
@@ -646,7 +646,7 @@ namespace Jitter.Collision
         /// <param name="penetration">The penetration depth.</param>
         protected void RaiseCollisionDetected(RigidBody body1, RigidBody body2,
                                             ref JVector point1, ref JVector point2,
-                                            ref JVector normal, float penetration)
+                                            ref JVector normal, JFix64 penetration)
         {
             if (this.CollisionDetected != null)
                 this.CollisionDetected(body1, body2, point1, point2, normal, penetration);

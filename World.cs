@@ -40,7 +40,7 @@ namespace Jitter
     /// </summary>
     public class World
     {
-        public delegate void WorldStep(float timestep);
+        public delegate void WorldStep(JFix64 timestep);
 
         public class WorldEvents
         {
@@ -69,12 +69,12 @@ namespace Jitter
 
             #region Raise Events
 
-            internal void RaiseWorldPreStep(float timestep)
+            internal void RaiseWorldPreStep(JFix64 timestep)
             {
                 if (PreStep != null) PreStep(timestep);
             }
 
-            internal void RaiseWorldPostStep(float timestep)
+            internal void RaiseWorldPostStep(JFix64 timestep)
             {
                 if (PostStep != null) PostStep(timestep);
             }
@@ -139,26 +139,26 @@ namespace Jitter
 
         private ContactSettings contactSettings = new ContactSettings();
 
-        private float inactiveAngularThresholdSq = 0.1f;
-        private float inactiveLinearThresholdSq = 0.1f;
-        private float deactivationTime = 2f;
+        private JFix64 inactiveAngularThresholdSq = JFix64.EN1;
+        private JFix64 inactiveLinearThresholdSq = JFix64.EN1;
+        private JFix64 deactivationTime = (2 * JFix64.One);
 
-        private float angularDamping = 0.85f;
-        private float linearDamping = 0.85f;
+        private JFix64 angularDamping = (85 * JFix64.EN2);
+        private JFix64 linearDamping = (85 * JFix64.EN2);
 
         private int contactIterations = 10;
         private int smallIterations = 4;
-        private float timestep = 0.0f;
+        private JFix64 timestep = JFix64.Zero;
 
         private Jitter.Collision.IslandManager islands = new IslandManager();
 
-        private HashSet<RigidBody> rigidBodies = new HashSet<RigidBody>();
-        private HashSet<Constraint> constraints = new HashSet<Constraint>();
-        private HashSet<SoftBody> softbodies = new HashSet<SoftBody>();
+        private HashList<RigidBody> rigidBodies = new HashList<RigidBody>();
+        private HashList<Constraint> constraints = new HashList<Constraint>();
+        private HashList<SoftBody> softbodies = new HashList<SoftBody>();
 
-        public ReadOnlyHashset<RigidBody> RigidBodies { get; private set; }
-        public ReadOnlyHashset<Constraint> Constraints { get; private set; }
-        public ReadOnlyHashset<SoftBody> SoftBodies { get; private set; }
+        public ReadOnlyHashList<RigidBody> RigidBodies { get; private set; }
+        public ReadOnlyHashList<Constraint> Constraints { get; private set; }
+        public ReadOnlyHashList<SoftBody> SoftBodies { get; private set; }
 
         private WorldEvents events = new WorldEvents();
         public WorldEvents Events { get { return events; } }
@@ -175,7 +175,7 @@ namespace Jitter
         private Queue<Arbiter> removedArbiterQueue = new Queue<Arbiter>();
         private Queue<Arbiter> addedArbiterQueue = new Queue<Arbiter>();
 
-        private JVector gravity = new JVector(0, -9.81f, 0);
+        private JVector gravity = new JVector(JFix64.Zero, -(981 * JFix64.EN2), JFix64.Zero);
 
         public ContactSettings ContactSettings { get { return contactSettings; } }
 
@@ -206,9 +206,9 @@ namespace Jitter
             integrateCallback = new Action<object>(IntegrateCallback);
 
             // Create the readonly wrappers
-            this.RigidBodies = new ReadOnlyHashset<RigidBody>(rigidBodies);
-            this.Constraints = new ReadOnlyHashset<Constraint>(constraints);
-            this.SoftBodies = new ReadOnlyHashset<SoftBody>(softbodies);
+            this.RigidBodies = new ReadOnlyHashList<RigidBody>(rigidBodies);
+            this.Constraints = new ReadOnlyHashList<Constraint>(constraints);
+            this.SoftBodies = new ReadOnlyHashList<SoftBody>(softbodies);
 
             this.CollisionSystem = collision;
 
@@ -348,12 +348,12 @@ namespace Jitter
         /// The default value is 0.85.</param>
         /// <param name="linearDamping">The factor multiplied with the linear velocity.
         /// The default value is 0.85</param>
-        public void SetDampingFactors(float angularDamping, float linearDamping)
+        public void SetDampingFactors(JFix64 angularDamping, JFix64 linearDamping)
         {
-            if (angularDamping < 0.0f || angularDamping > 1.0f)
+            if (angularDamping < JFix64.Zero || angularDamping > JFix64.One)
                 throw new ArgumentException("Angular damping factor has to be between 0.0 and 1.0", "angularDamping");
 
-            if (linearDamping < 0.0f || linearDamping > 1.0f)
+            if (linearDamping < JFix64.Zero || linearDamping > JFix64.One)
                 throw new ArgumentException("Linear damping factor has to be between 0.0 and 1.0", "linearDamping");
 
             this.angularDamping = angularDamping;
@@ -374,16 +374,16 @@ namespace Jitter
         /// <param name="linearVelocity">The threshold value for the linear velocity. The default value
         /// is 0.1</param>
         /// <param name="time">The threshold value for the time in seconds. The default value is 2.</param>
-        public void SetInactivityThreshold(float angularVelocity, float linearVelocity, float time)
+        public void SetInactivityThreshold(JFix64 angularVelocity, JFix64 linearVelocity, JFix64 time)
         {
-            if (angularVelocity < 0.0f) throw new ArgumentException("Angular velocity threshold has to " +
-                 "be larger than zero", "angularVelocity");
+            if (angularVelocity < JFix64.Zero) throw new ArgumentException("Angular velocity threshold has to " +
+                                                                              "be larger than zero", "angularVelocity");
 
-            if (linearVelocity < 0.0f) throw new ArgumentException("Linear velocity threshold has to " +
-                "be larger than zero", "linearVelocity");
+            if (linearVelocity < JFix64.Zero) throw new ArgumentException("Linear velocity threshold has to " +
+                                                                              "be larger than zero", "linearVelocity");
 
-            if (time < 0.0f) throw new ArgumentException("Deactivation time threshold has to " +
-                "be larger than zero", "time");
+            if (time < JFix64.Zero) throw new ArgumentException("Deactivation time threshold has to " +
+                                                                  "be larger than zero", "time");
 
             this.inactiveAngularThresholdSq = angularVelocity * angularVelocity;
             this.inactiveLinearThresholdSq = linearVelocity * linearVelocity;
@@ -501,8 +501,8 @@ namespace Jitter
             events.RaiseAddedConstraint(constraint);
         }
 
-        private float currentLinearDampFactor = 1.0f;
-        private float currentAngularDampFactor = 1.0f;
+        private JFix64 currentLinearDampFactor = JFix64.One;
+        private JFix64 currentAngularDampFactor = JFix64.One;
 
 #if(!WINDOWS_PHONE)
         Stopwatch sw = new Stopwatch();
@@ -519,8 +519,8 @@ namespace Jitter
         /// <example>int time = DebugTimes[(int)DebugType.CollisionDetect] gives
         /// the amount of time spent on collision detection during the last <see cref="Step"/>.
         /// </example>
-        private double[] debugTimes = new double[(int)DebugType.Num];
-        public double[] DebugTimes { get { return debugTimes; } }
+        private JFix64[] debugTimes = new JFix64[(int)DebugType.Num];
+        public JFix64[] DebugTimes { get { return debugTimes; } }
 #endif
 
         /// <summary>
@@ -532,19 +532,19 @@ namespace Jitter
         /// (timestep=1/60).</param>
         /// <param name="multithread">If true the engine uses several threads to
         /// integrate the world. This is faster on multicore CPUs.</param>
-        public void Step(float timestep, bool multithread)
+        public void Step(JFix64 timestep, bool multithread)
         {
             this.timestep = timestep;
 
             // yeah! nothing to do!
-            if (timestep == 0.0f) return;
+            if (timestep == JFix64.Zero) return;
 
             // throw exception if the timestep is smaller zero.
-            if (timestep < 0.0f) throw new ArgumentException("The timestep can't be negative.", "timestep");
+            if (timestep < JFix64.Zero) throw new ArgumentException("The timestep can't be negative.", "timestep");
 
             // Calculate this
-            currentAngularDampFactor = (float)Math.Pow(angularDamping, timestep);
-            currentLinearDampFactor = (float)Math.Pow(linearDamping, timestep);
+            currentAngularDampFactor = JFix64Math.Pow(angularDamping, timestep);
+            currentLinearDampFactor = JFix64Math.Pow(linearDamping, timestep);
 
 #if(WINDOWS_PHONE)
             events.RaiseWorldPreStep(timestep);
@@ -583,7 +583,7 @@ namespace Jitter
             sw.Stop(); debugTimes[(int)DebugType.UpdateContacts] = sw.Elapsed.TotalMilliseconds;
 
             sw.Reset(); sw.Start();
-            double ms = 0;
+            JFix64 ms = 0;
             while (removedArbiterQueue.Count > 0) islands.ArbiterRemoved(removedArbiterQueue.Dequeue());
             sw.Stop(); ms = sw.Elapsed.TotalMilliseconds;
 
@@ -628,7 +628,7 @@ namespace Jitter
 #endif
         }
 
-        private float accumulatedTime = 0.0f;
+        private JFix64 accumulatedTime = JFix64.Zero;
 
         /// <summary>
         /// Integrates the whole world several fixed timestep further in time.
@@ -642,7 +642,7 @@ namespace Jitter
         /// integrate the world. This is faster on multicore CPUs.</param>
         /// <param name="maxSteps">The maximum number of substeps. After that Jitter gives up
         /// to keep up with the given totalTime.</param>
-        public void Step(float totalTime, bool multithread, float timestep, int maxSteps)
+        public void Step(JFix64 totalTime, bool multithread, JFix64 timestep, int maxSteps)
         {
             int counter = 0;
             accumulatedTime += totalTime;
@@ -657,7 +657,7 @@ namespace Jitter
                 if (counter > maxSteps)
                 {
                     // okay, okay... we can't keep up
-                    accumulatedTime = 0.0f;
+                    accumulatedTime = JFix64.Zero;
                     break;
                 }
             }
@@ -686,14 +686,14 @@ namespace Jitter
                 else
                 {
                     JVector diff; JVector.Subtract(ref c.p1, ref c.p2, out diff);
-                    float distance = JVector.Dot(ref diff, ref c.normal);
+                    JFix64 distance = JVector.Dot(ref diff, ref c.normal);
 
                     diff = diff - distance * c.normal;
                     distance = diff.LengthSquared();
 
                     // hack (multiplication by factor 100) in the
                     // following line.
-                    if (distance > contactSettings.breakThreshold * contactSettings.breakThreshold * 100)
+                    if (distance > contactSettings.breakThreshold * contactSettings.breakThreshold * (100 * JFix64.One))
                     {
                         Contact.Pool.GiveBack(c);
                         arbiter.contactList.RemoveAt(i);
@@ -826,21 +826,21 @@ namespace Jitter
 
                 //exponential map
                 JVector axis;
-                float angle = body.angularVelocity.Length();
+                JFix64 angle = body.angularVelocity.Length();
 
-                if (angle < 0.001f)
+                if (angle < JFix64.EN3)
                 {
                     // use Taylor's expansions of sync function
                     // axis = body.angularVelocity * (0.5f * timestep - (timestep * timestep * timestep) * (0.020833333333f) * angle * angle);
-                    JVector.Multiply(ref body.angularVelocity, (0.5f * timestep - (timestep * timestep * timestep) * (0.020833333333f) * angle * angle), out axis);
+                    JVector.Multiply(ref body.angularVelocity, (JFix64.Half * timestep - (timestep * timestep * timestep) * (2083333 * JFix64.EN8) * angle * angle), out axis);
                 }
                 else
                 {
                     // sync(fAngle) = sin(c*fAngle)/t
-                    JVector.Multiply(ref body.angularVelocity, ((float)Math.Sin(0.5f * angle * timestep) / angle), out axis);
+                    JVector.Multiply(ref body.angularVelocity, (JFix64Math.Sin(JFix64.Half * angle * timestep) / angle), out axis);
                 }
 
-                JQuaternion dorn = new JQuaternion(axis.X, axis.Y, axis.Z, (float)Math.Cos(angle * timestep * 0.5f));
+                JQuaternion dorn = new JQuaternion(axis.X, axis.Y, axis.Z, JFix64Math.Cos(angle * timestep * JFix64.Half));
                 JQuaternion ornA; JQuaternion.CreateFromMatrix(ref body.orientation, out ornA);
 
                 JQuaternion.Multiply(ref dorn, ref ornA, out dorn);
@@ -885,7 +885,7 @@ namespace Jitter
             }
         }
 
-        private void CollisionDetected(RigidBody body1, RigidBody body2, JVector point1, JVector point2, JVector normal, float penetration)
+        private void CollisionDetected(RigidBody body1, RigidBody body2, JVector point1, JVector point2, JVector normal, JFix64 penetration)
         {
             Arbiter arbiter = null;
 
@@ -947,7 +947,7 @@ namespace Jitter
                         }
                         else
                         {
-                            body.inactiveTime = 0.0f;
+                            body.inactiveTime = JFix64.Zero;
                             deactivateIsland = false;
                         }
                     }

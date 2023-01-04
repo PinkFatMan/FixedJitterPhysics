@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Jitter.LinearMath;
 
 namespace Jitter.Dynamics
 {
@@ -10,25 +11,25 @@ namespace Jitter.Dynamics
     public class Material
     {
 
-        internal float kineticFriction = 0.3f;
-        internal float staticFriction = 0.6f;
-        internal float restitution = 0.0f;
+        internal JFix64 kineticFriction = (3 * JFix64.EN1);
+        internal JFix64 staticFriction = (6 * JFix64.EN1);
+        internal JFix64 restitution = JFix64.Zero;
 
         public Material() { }
 
-        public float Restitution
+        public JFix64 Restitution
         {
             get { return restitution; }
             set { restitution = value; }
         }
 
-        public float StaticFriction
+        public JFix64 StaticFriction
         {
             get { return staticFriction; }
             set { staticFriction = value; }
         }
 
-        public float KineticFriction
+        public JFix64 KineticFriction
         {
             get { return kineticFriction; }
             set { kineticFriction = value; }

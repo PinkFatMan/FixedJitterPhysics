@@ -34,24 +34,24 @@ namespace Jitter.Collision.Shapes
     /// </summary>
     public class ConeShape : Shape
     {
-        float height,radius;
+        JFix64 height,radius;
 
         /// <summary>
         /// The height of the cone.
         /// </summary>
-        public float Height { get { return height; } set { height = value; UpdateShape(); } }
+        public JFix64 Height { get { return height; } set { height = value; UpdateShape(); } }
 
         /// <summary>
         /// The radius of the cone base.
         /// </summary>
-        public float Radius { get { return radius; } set { radius = value; UpdateShape(); } }
+        public JFix64 Radius { get { return radius; } set { radius = value; UpdateShape(); } }
 
         /// <summary>
         /// Initializes a new instance of the ConeShape class.
         /// </summary>
         /// <param name="height">The height of the cone.</param>
         /// <param name="radius">The radius of the cone base.</param>
-        public ConeShape(float height, float radius)
+        public ConeShape(JFix64 height, JFix64 radius)
         {
             this.height = height;
             this.radius = radius;
@@ -61,24 +61,24 @@ namespace Jitter.Collision.Shapes
 
         public override void UpdateShape()
         {
-            sina = radius / (float)Math.Sqrt(radius * radius + height * height);
+            sina = radius / JFix64Math.Sqrt(radius * radius + height * height);
             base.UpdateShape();
         }
 
-        float sina = 0.0f;
+        JFix64 sina = JFix64.Zero;
 
         /// <summary>
         /// 
         /// </summary>
         public override void CalculateMassInertia()
         {
-            mass = (1.0f / 3.0f) * JMath.Pi * radius * radius * height;
+            mass = (JFix64.One / (3 * JFix64.One)) * JFix64Math.Pi * radius * radius * height;
 
             // inertia through center of mass axis.
             inertia = JMatrix.Identity;
-            inertia.M11 = (3.0f / 80.0f) * mass * (radius * radius + 4 * height * height);
-            inertia.M22 = (3.0f / 10.0f) * mass * radius * radius;
-            inertia.M33 = (3.0f / 80.0f) * mass * (radius * radius + 4 * height * height);
+            inertia.M11 = ((3 * JFix64.One) / (80 * JFix64.One)) * mass * (radius * radius + 4 * height * height);
+            inertia.M22 = ((3 * JFix64.One) / (10 * JFix64.One)) * mass * radius * radius;
+            inertia.M33 = ((3 * JFix64.One) / (80 * JFix64.One)) * mass * (radius * radius + 4 * height * height);
 
             // J_x=J_y=3/20 M (R^2+4 H^2)
 
@@ -95,25 +95,25 @@ namespace Jitter.Collision.Shapes
         /// <param name="result">The result.</param>
         public override void SupportMapping(ref JVector direction, out JVector result)
         {
-            float sigma = (float)Math.Sqrt((float)(direction.X * direction.X + direction.Z * direction.Z));
+            JFix64 sigma = JFix64Math.Sqrt((direction.X * direction.X + direction.Z * direction.Z));
 
             if (direction.Y > direction.Length() * sina)
             {
-                result.X = 0.0f;
-                result.Y = (2.0f / 3.0f) * height;
-                result.Z = 0.0f;
+                result.X = JFix64.Zero;
+                result.Y = ((2 * JFix64.One) / (3 * JFix64.One)) * height;
+                result.Z = JFix64.Zero;
             }
-            else if (sigma > 0.0f)
+            else if (sigma > JFix64.Zero)
             {
                 result.X = radius * direction.X / sigma;
-                result.Y = -(1.0f / 3.0f) * height;
+                result.Y = -(JFix64.One / (3 * JFix64.One)) * height;
                 result.Z = radius * direction.Z / sigma;
             }
             else
             {
-                result.X = 0.0f;
-                result.Y = -(1.0f / 3.0f) * height;
-                result.Z = 0.0f;
+                result.X = JFix64.Zero;
+                result.Y = -(JFix64.One / (3 * JFix64.One)) * height;
+                result.Z = JFix64.Zero;
             }
 
         }

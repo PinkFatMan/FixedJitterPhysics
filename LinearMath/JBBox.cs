@@ -76,10 +76,10 @@ namespace Jitter.LinearMath
 
         static JBBox()
         {
-            LargeBox.Min = new JVector(float.MinValue);
-            LargeBox.Max = new JVector(float.MaxValue);
-            SmallBox.Min = new JVector(float.MaxValue);
-            SmallBox.Max = new JVector(float.MinValue);
+            LargeBox.Min = new JVector(JFix64.MinValue);
+            LargeBox.Max = new JVector(JFix64.MaxValue);
+            SmallBox.Min = new JVector(JFix64.MaxValue);
+            SmallBox.Max = new JVector(JFix64.MinValue);
         }
 
         /// <summary>
@@ -106,15 +106,15 @@ namespace Jitter.LinearMath
 
             JVector center;
             JVector.Add(ref Max, ref Min, out center);
-            center.X *= 0.5f; center.Y *= 0.5f; center.Z *= 0.5f;
+            center.X *= JFix64.Half; center.Y *= JFix64.Half; center.Z *= JFix64.Half;
 
             JVector halfExtents;
             JVector.Subtract(ref Max, ref Min, out halfExtents);
-            halfExtents.X *= 0.5f; halfExtents.Y *= 0.5f; halfExtents.Z *= 0.5f;
+            halfExtents.X *= JFix64.Half; halfExtents.Y *= JFix64.Half; halfExtents.Z *= JFix64.Half;
 
             JVector.TransposedTransform(ref center, ref orientation, out center);
 
-            JMatrix abs; JMath.Absolute(ref orientation, out abs);
+            JMatrix abs; JFix64Math.Absolute(ref orientation, out abs);
             JVector.TransposedTransform(ref halfExtents, ref abs, out halfExtents);
 
             JVector.Add(ref center, ref halfExtents, out Max);
@@ -123,12 +123,12 @@ namespace Jitter.LinearMath
 
         public void Transform(ref JMatrix orientation)
         {
-            JVector halfExtents = 0.5f * (Max - Min);
-            JVector center = 0.5f * (Max + Min);
+            JVector halfExtents = JFix64.Half * (Max - Min);
+            JVector center = JFix64.Half * (Max + Min);
 
             JVector.Transform(ref center, ref orientation, out center);
 
-            JMatrix abs; JMath.Absolute(ref orientation, out abs);
+            JMatrix abs; JFix64Math.Absolute(ref orientation, out abs);
             JVector.Transform(ref halfExtents, ref abs, out halfExtents);
 
             Max = center + halfExtents;
@@ -142,15 +142,15 @@ namespace Jitter.LinearMath
         /// <returns>The ContainmentType of the point.</returns>
         #region public Ray/Segment Intersection
 
-        private bool Intersect1D(float start, float dir, float min, float max,
-            ref float enter,ref float exit)
+        private bool Intersect1D(JFix64 start, JFix64 dir, JFix64 min, JFix64 max,
+            ref JFix64 enter,ref JFix64 exit)
         {
-            if (dir * dir < JMath.Epsilon * JMath.Epsilon) return (start >= min && start <= max);
+            if (dir * dir < JFix64Math.Epsilon * JFix64Math.Epsilon) return (start >= min && start <= max);
 
-            float t0 = (min - start) / dir;
-            float t1 = (max - start) / dir;
+            JFix64 t0 = (min - start) / dir;
+            JFix64 t1 = (max - start) / dir;
 
-            if (t0 > t1) { float tmp = t0; t0 = t1; t1 = tmp; }
+            if (t0 > t1) { JFix64 tmp = t0; t0 = t1; t1 = tmp; }
 
             if (t0 > exit || t1 < enter) return false;
 
@@ -162,7 +162,7 @@ namespace Jitter.LinearMath
 
         public bool SegmentIntersect(ref JVector origin,ref JVector direction)
         {
-            float enter = 0.0f, exit = 1.0f;
+            JFix64 enter = JFix64.Zero, exit = JFix64.One;
 
             if (!Intersect1D(origin.X, direction.X, Min.X, Max.X,ref enter,ref exit))
                 return false;
@@ -178,7 +178,7 @@ namespace Jitter.LinearMath
 
         public bool RayIntersect(ref JVector origin, ref JVector direction)
         {
-            float enter = 0.0f, exit = float.MaxValue;
+            JFix64 enter = JFix64.Zero, exit = JFix64.MaxValue;
 
             if (!Intersect1D(origin.X, direction.X, Min.X, Max.X, ref enter, ref exit))
                 return false;
@@ -269,8 +269,8 @@ namespace Jitter.LinearMath
 
         public static JBBox CreateFromPoints(JVector[] points)
         {
-            JVector vector3 = new JVector(float.MaxValue);
-            JVector vector2 = new JVector(float.MinValue);
+            JVector vector3 = new JVector(JFix64.MaxValue);
+            JVector vector2 = new JVector(JFix64.MinValue);
 
             for (int i = 0; i < points.Length; i++)
             {
@@ -347,13 +347,13 @@ namespace Jitter.LinearMath
 
         #endregion
 
-        public JVector Center { get { return (Min + Max)* (1.0f /2.0f); } }
+        public JVector Center { get { return (Min + Max)* (JFix64.One /(2 * JFix64.One)); } }
 
-        internal float Perimeter
+        internal JFix64 Perimeter
         {
             get
             {
-                return 2.0f * ((Max.X - Min.X) * (Max.Y - Min.Y) +
+                return (2 * JFix64.One) * ((Max.X - Min.X) * (Max.Y - Min.Y) +
                     (Max.X - Min.X) * (Max.Z - Min.Z) +
                     (Max.Z - Min.Z) * (Max.Y - Min.Y));
             }

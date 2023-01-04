@@ -35,23 +35,23 @@ namespace Jitter.Dynamics
     {
         public enum MaterialCoefficientMixingType { TakeMaximum, TakeMinimum, UseAverage }
 
-        internal float maximumBias = 10.0f;
-        internal float bias = 0.25f;
-        internal float minVelocity = 0.001f;
-        internal float allowedPenetration = 0.01f;
-        internal float breakThreshold = 0.01f;
+        internal JFix64 maximumBias = (10 * JFix64.One);
+        internal JFix64 bias = (25 * JFix64.EN2);
+        internal JFix64 minVelocity = JFix64.EN3;
+        internal JFix64 allowedPenetration = JFix64.EN2;
+        internal JFix64 breakThreshold = JFix64.EN2;
 
         internal MaterialCoefficientMixingType materialMode = MaterialCoefficientMixingType.UseAverage;
 
-        public float MaximumBias { get { return maximumBias; } set { maximumBias = value; } }
+        public JFix64 MaximumBias { get { return maximumBias; } set { maximumBias = value; } }
 
-        public float BiasFactor { get { return bias; } set { bias = value; } }
+        public JFix64 BiasFactor { get { return bias; } set { bias = value; } }
 
-        public float MinimumVelocity { get { return minVelocity; } set { minVelocity = value; } }
+        public JFix64 MinimumVelocity { get { return minVelocity; } set { minVelocity = value; } }
 
-        public float AllowedPenetration { get { return allowedPenetration; } set { allowedPenetration = value; } }
+        public JFix64 AllowedPenetration { get { return allowedPenetration; } set { allowedPenetration = value; } }
 
-        public float BreakThreshold { get { return breakThreshold; } set { breakThreshold = value; } }
+        public JFix64 BreakThreshold { get { return breakThreshold; } set { breakThreshold = value; } }
 
         public MaterialCoefficientMixingType MaterialCoefficientMixing { get { return materialMode; } set { materialMode = value; } }
     }
@@ -72,17 +72,17 @@ namespace Jitter.Dynamics
         internal JVector relativePos1, relativePos2;
         internal JVector p1, p2;
 
-        internal float accumulatedNormalImpulse = 0.0f;
-        internal float accumulatedTangentImpulse = 0.0f;
+        internal JFix64 accumulatedNormalImpulse = JFix64.Zero;
+        internal JFix64 accumulatedTangentImpulse = JFix64.Zero;
 
-        internal float penetration = 0.0f;
-        internal float initialPen = 0.0f;
+        internal JFix64 penetration = JFix64.Zero;
+        internal JFix64 initialPen = JFix64.Zero;
 
-        private float staticFriction, dynamicFriction, restitution;
-        private float friction = 0.0f;
+        private JFix64 staticFriction, dynamicFriction, restitution;
+        private JFix64 friction = JFix64.Zero;
 
-        private float massNormal = 0.0f, massTangent = 0.0f;
-        private float restitutionBias = 0.0f;
+        private JFix64 massNormal = JFix64.Zero, massTangent = JFix64.Zero;
+        private JFix64 restitutionBias = JFix64.Zero;
 
         private bool newContact = false;
 
@@ -92,8 +92,8 @@ namespace Jitter.Dynamics
 
         bool body1IsMassPoint; bool body2IsMassPoint;
 
-        float lostSpeculativeBounce = 0.0f;
-        float speculativeVelocity = 0.0f;
+        JFix64 lostSpeculativeBounce = JFix64.Zero;
+        JFix64 speculativeVelocity = JFix64.Zero;
 
         /// <summary>
         /// A contact resource pool.
@@ -101,22 +101,22 @@ namespace Jitter.Dynamics
         public static readonly ResourcePool<Contact> Pool =
             new ResourcePool<Contact>();
 
-        private float lastTimeStep = float.PositiveInfinity;
+        private JFix64 lastTimeStep = JFix64.PositiveInfinity;
 
         #region Properties
-        public float Restitution
+        public JFix64 Restitution
         {
             get { return restitution; }
             set { restitution = value; }
         }
 
-        public float StaticFriction
+        public JFix64 StaticFriction
         {
             get { return staticFriction; }
             set { staticFriction = value; }
         }
 
-        public float DynamicFriction
+        public JFix64 DynamicFriction
         {
             get { return dynamicFriction; }
             set { dynamicFriction = value; }
@@ -135,7 +135,7 @@ namespace Jitter.Dynamics
         /// <summary>
         /// The penetration of the contact.
         /// </summary>
-        public float Penetration { get { return penetration; } }
+        public JFix64 Penetration { get { return penetration; } }
 
         /// <summary>
         /// The collision position in world space of body1.
@@ -164,7 +164,7 @@ namespace Jitter.Dynamics
         /// <param name="relVel">The relative velocity of body contact points on the bodies.</param>
         public JVector CalculateRelativeVelocity()
         {
-            float x, y, z;
+            JFix64 x, y, z;
 
             x = (body2.angularVelocity.Y * relativePos2.Z) - (body2.angularVelocity.Z * relativePos2.Y) + body2.linearVelocity.X;
             y = (body2.angularVelocity.Z * relativePos2.X) - (body2.angularVelocity.X * relativePos2.Z) + body2.linearVelocity.Y;
@@ -189,7 +189,7 @@ namespace Jitter.Dynamics
 
             if (treatBody1AsStatic && treatBody2AsStatic) return;
 
-            float dvx, dvy, dvz;
+            JFix64 dvx, dvy, dvz;
 
             dvx = body2.linearVelocity.X - body1.linearVelocity.X;
             dvy = body2.linearVelocity.Y - body1.linearVelocity.Y;
@@ -213,19 +213,19 @@ namespace Jitter.Dynamics
             if (dvx * dvx + dvy * dvy + dvz * dvz < settings.minVelocity * settings.minVelocity)
             { return; }
 
-            float vn = normal.X * dvx + normal.Y * dvy + normal.Z * dvz;
-            float normalImpulse = massNormal * (-vn + restitutionBias + speculativeVelocity);
+            JFix64 vn = normal.X * dvx + normal.Y * dvy + normal.Z * dvz;
+            JFix64 normalImpulse = massNormal * (-vn + restitutionBias + speculativeVelocity);
 
-            float oldNormalImpulse = accumulatedNormalImpulse;
+            JFix64 oldNormalImpulse = accumulatedNormalImpulse;
             accumulatedNormalImpulse = oldNormalImpulse + normalImpulse;
-            if (accumulatedNormalImpulse < 0.0f) accumulatedNormalImpulse = 0.0f;
+            if (accumulatedNormalImpulse < JFix64.Zero) accumulatedNormalImpulse = JFix64.Zero;
             normalImpulse = accumulatedNormalImpulse - oldNormalImpulse;
 
-            float vt = dvx * tangent.X + dvy * tangent.Y + dvz * tangent.Z;
-            float maxTangentImpulse = friction * accumulatedNormalImpulse;
-            float tangentImpulse = massTangent * (-vt);
+            JFix64 vt = dvx * tangent.X + dvy * tangent.Y + dvz * tangent.Z;
+            JFix64 maxTangentImpulse = friction * accumulatedNormalImpulse;
+            JFix64 tangentImpulse = massTangent * (-vt);
 
-            float oldTangentImpulse = accumulatedTangentImpulse;
+            JFix64 oldTangentImpulse = accumulatedTangentImpulse;
             accumulatedTangentImpulse = oldTangentImpulse + tangentImpulse;
             if (accumulatedTangentImpulse < -maxTangentImpulse) accumulatedTangentImpulse = -maxTangentImpulse;
             else if (accumulatedTangentImpulse > maxTangentImpulse) accumulatedTangentImpulse = maxTangentImpulse;
@@ -246,20 +246,20 @@ namespace Jitter.Dynamics
 
                 if (!body1IsMassPoint)
                 {
-                    float num0, num1, num2;
+                    JFix64 num0, num1, num2;
                     num0 = relativePos1.Y * impulse.Z - relativePos1.Z * impulse.Y;
                     num1 = relativePos1.Z * impulse.X - relativePos1.X * impulse.Z;
                     num2 = relativePos1.X * impulse.Y - relativePos1.Y * impulse.X;
 
-                    float num3 =
+                    JFix64 num3 =
                         (((num0 * body1.invInertiaWorld.M11) +
                         (num1 * body1.invInertiaWorld.M21)) +
                         (num2 * body1.invInertiaWorld.M31));
-                    float num4 =
+                    JFix64 num4 =
                         (((num0 * body1.invInertiaWorld.M12) +
                         (num1 * body1.invInertiaWorld.M22)) +
                         (num2 * body1.invInertiaWorld.M32));
-                    float num5 =
+                    JFix64 num5 =
                         (((num0 * body1.invInertiaWorld.M13) +
                         (num1 * body1.invInertiaWorld.M23)) +
                         (num2 * body1.invInertiaWorld.M33));
@@ -280,20 +280,20 @@ namespace Jitter.Dynamics
                 if (!body2IsMassPoint)
                 {
 
-                    float num0, num1, num2;
+                    JFix64 num0, num1, num2;
                     num0 = relativePos2.Y * impulse.Z - relativePos2.Z * impulse.Y;
                     num1 = relativePos2.Z * impulse.X - relativePos2.X * impulse.Z;
                     num2 = relativePos2.X * impulse.Y - relativePos2.Y * impulse.X;
 
-                    float num3 =
+                    JFix64 num3 =
                         (((num0 * body2.invInertiaWorld.M11) +
                         (num1 * body2.invInertiaWorld.M21)) +
                         (num2 * body2.invInertiaWorld.M31));
-                    float num4 =
+                    JFix64 num4 =
                         (((num0 * body2.invInertiaWorld.M12) +
                         (num1 * body2.invInertiaWorld.M22)) +
                         (num2 * body2.invInertiaWorld.M32));
-                    float num5 =
+                    JFix64 num5 =
                         (((num0 * body2.invInertiaWorld.M13) +
                         (num1 * body2.invInertiaWorld.M23)) +
                         (num2 * body2.invInertiaWorld.M33));
@@ -307,8 +307,8 @@ namespace Jitter.Dynamics
 
         }
 
-        public float AppliedNormalImpulse { get { return accumulatedNormalImpulse; } }
-        public float AppliedTangentImpulse { get { return accumulatedTangentImpulse; } }
+        public JFix64 AppliedNormalImpulse { get { return accumulatedNormalImpulse; } }
+        public JFix64 AppliedTangentImpulse { get { return accumulatedTangentImpulse; } }
 
         /// <summary>
         /// The points in wolrd space gets recalculated by transforming the
@@ -356,20 +356,20 @@ namespace Jitter.Dynamics
                 body1.linearVelocity.Y -= (impulse.Y * body1.inverseMass);
                 body1.linearVelocity.Z -= (impulse.Z * body1.inverseMass);
 
-                float num0, num1, num2;
+                JFix64 num0, num1, num2;
                 num0 = relativePos1.Y * impulse.Z - relativePos1.Z * impulse.Y;
                 num1 = relativePos1.Z * impulse.X - relativePos1.X * impulse.Z;
                 num2 = relativePos1.X * impulse.Y - relativePos1.Y * impulse.X;
 
-                float num3 =
+                JFix64 num3 =
                     (((num0 * body1.invInertiaWorld.M11) +
                     (num1 * body1.invInertiaWorld.M21)) +
                     (num2 * body1.invInertiaWorld.M31));
-                float num4 =
+                JFix64 num4 =
                     (((num0 * body1.invInertiaWorld.M12) +
                     (num1 * body1.invInertiaWorld.M22)) +
                     (num2 * body1.invInertiaWorld.M32));
-                float num5 =
+                JFix64 num5 =
                     (((num0 * body1.invInertiaWorld.M13) +
                     (num1 * body1.invInertiaWorld.M23)) +
                     (num2 * body1.invInertiaWorld.M33));
@@ -386,20 +386,20 @@ namespace Jitter.Dynamics
                 body2.linearVelocity.Y += (impulse.Y * body2.inverseMass);
                 body2.linearVelocity.Z += (impulse.Z * body2.inverseMass);
 
-                float num0, num1, num2;
+                JFix64 num0, num1, num2;
                 num0 = relativePos2.Y * impulse.Z - relativePos2.Z * impulse.Y;
                 num1 = relativePos2.Z * impulse.X - relativePos2.X * impulse.Z;
                 num2 = relativePos2.X * impulse.Y - relativePos2.Y * impulse.X;
 
-                float num3 =
+                JFix64 num3 =
                     (((num0 * body2.invInertiaWorld.M11) +
                     (num1 * body2.invInertiaWorld.M21)) +
                     (num2 * body2.invInertiaWorld.M31));
-                float num4 =
+                JFix64 num4 =
                     (((num0 * body2.invInertiaWorld.M12) +
                     (num1 * body2.invInertiaWorld.M22)) +
                     (num2 * body2.invInertiaWorld.M32));
-                float num5 =
+                JFix64 num5 =
                     (((num0 * body2.invInertiaWorld.M13) +
                     (num1 * body2.invInertiaWorld.M23)) +
                     (num2 * body2.invInertiaWorld.M33));
@@ -424,20 +424,20 @@ namespace Jitter.Dynamics
                 body1.linearVelocity.Y -= (impulse.Y * body1.inverseMass);
                 body1.linearVelocity.Z -= (impulse.Z * body1.inverseMass);
 
-                float num0, num1, num2;
+                JFix64 num0, num1, num2;
                 num0 = relativePos1.Y * impulse.Z - relativePos1.Z * impulse.Y;
                 num1 = relativePos1.Z * impulse.X - relativePos1.X * impulse.Z;
                 num2 = relativePos1.X * impulse.Y - relativePos1.Y * impulse.X;
 
-                float num3 =
+                JFix64 num3 =
                     (((num0 * body1.invInertiaWorld.M11) +
                     (num1 * body1.invInertiaWorld.M21)) +
                     (num2 * body1.invInertiaWorld.M31));
-                float num4 =
+                JFix64 num4 =
                     (((num0 * body1.invInertiaWorld.M12) +
                     (num1 * body1.invInertiaWorld.M22)) +
                     (num2 * body1.invInertiaWorld.M32));
-                float num5 =
+                JFix64 num5 =
                     (((num0 * body1.invInertiaWorld.M13) +
                     (num1 * body1.invInertiaWorld.M23)) +
                     (num2 * body1.invInertiaWorld.M33));
@@ -454,20 +454,20 @@ namespace Jitter.Dynamics
                 body2.linearVelocity.Y += (impulse.Y * body2.inverseMass);
                 body2.linearVelocity.Z += (impulse.Z * body2.inverseMass);
 
-                float num0, num1, num2;
+                JFix64 num0, num1, num2;
                 num0 = relativePos2.Y * impulse.Z - relativePos2.Z * impulse.Y;
                 num1 = relativePos2.Z * impulse.X - relativePos2.X * impulse.Z;
                 num2 = relativePos2.X * impulse.Y - relativePos2.Y * impulse.X;
 
-                float num3 =
+                JFix64 num3 =
                     (((num0 * body2.invInertiaWorld.M11) +
                     (num1 * body2.invInertiaWorld.M21)) +
                     (num2 * body2.invInertiaWorld.M31));
-                float num4 =
+                JFix64 num4 =
                     (((num0 * body2.invInertiaWorld.M12) +
                     (num1 * body2.invInertiaWorld.M22)) +
                     (num2 * body2.invInertiaWorld.M32));
-                float num5 =
+                JFix64 num5 =
                     (((num0 * body2.invInertiaWorld.M13) +
                     (num1 * body2.invInertiaWorld.M23)) +
                     (num2 * body2.invInertiaWorld.M33));
@@ -485,9 +485,9 @@ namespace Jitter.Dynamics
         /// PrepareForIteration has to be called before <see cref="Iterate"/>.
         /// </summary>
         /// <param name="timestep">The timestep of the simulation.</param>
-        public void PrepareForIteration(float timestep)
+        public void PrepareForIteration(JFix64 timestep)
         {
-            float dvx, dvy, dvz;
+            JFix64 dvx, dvy, dvz;
 
             dvx = (body2.angularVelocity.Y * relativePos2.Z) - (body2.angularVelocity.Z * relativePos2.Y) + body2.linearVelocity.X;
             dvy = (body2.angularVelocity.Z * relativePos2.X) - (body2.angularVelocity.X * relativePos2.Z) + body2.linearVelocity.Y;
@@ -497,7 +497,7 @@ namespace Jitter.Dynamics
             dvy = dvy - (body1.angularVelocity.Z * relativePos1.X) + (body1.angularVelocity.X * relativePos1.Z) - body1.linearVelocity.Y;
             dvz = dvz - (body1.angularVelocity.X * relativePos1.Y) + (body1.angularVelocity.Y * relativePos1.X) - body1.linearVelocity.Z;
 
-            float kNormal = 0.0f;
+            JFix64 kNormal = JFix64.Zero;
 
             JVector rantra = JVector.Zero;
             if (!treatBody1AsStatic)
@@ -513,9 +513,9 @@ namespace Jitter.Dynamics
                     rantra.Z = (relativePos1.X * normal.Y) - (relativePos1.Y * normal.X);
 
                     // JVector.Transform(ref rantra, ref body1.invInertiaWorld, out rantra);
-                    float num0 = ((rantra.X * body1.invInertiaWorld.M11) + (rantra.Y * body1.invInertiaWorld.M21)) + (rantra.Z * body1.invInertiaWorld.M31);
-                    float num1 = ((rantra.X * body1.invInertiaWorld.M12) + (rantra.Y * body1.invInertiaWorld.M22)) + (rantra.Z * body1.invInertiaWorld.M32);
-                    float num2 = ((rantra.X * body1.invInertiaWorld.M13) + (rantra.Y * body1.invInertiaWorld.M23)) + (rantra.Z * body1.invInertiaWorld.M33);
+                    JFix64 num0 = ((rantra.X * body1.invInertiaWorld.M11) + (rantra.Y * body1.invInertiaWorld.M21)) + (rantra.Z * body1.invInertiaWorld.M31);
+                    JFix64 num1 = ((rantra.X * body1.invInertiaWorld.M12) + (rantra.Y * body1.invInertiaWorld.M22)) + (rantra.Z * body1.invInertiaWorld.M32);
+                    JFix64 num2 = ((rantra.X * body1.invInertiaWorld.M13) + (rantra.Y * body1.invInertiaWorld.M23)) + (rantra.Z * body1.invInertiaWorld.M33);
 
                     rantra.X = num0; rantra.Y = num1; rantra.Z = num2;
 
@@ -542,9 +542,9 @@ namespace Jitter.Dynamics
                     rbntrb.Z = (relativePos2.X * normal.Y) - (relativePos2.Y * normal.X);
 
                     // JVector.Transform(ref rantra, ref body1.invInertiaWorld, out rantra);
-                    float num0 = ((rbntrb.X * body2.invInertiaWorld.M11) + (rbntrb.Y * body2.invInertiaWorld.M21)) + (rbntrb.Z * body2.invInertiaWorld.M31);
-                    float num1 = ((rbntrb.X * body2.invInertiaWorld.M12) + (rbntrb.Y * body2.invInertiaWorld.M22)) + (rbntrb.Z * body2.invInertiaWorld.M32);
-                    float num2 = ((rbntrb.X * body2.invInertiaWorld.M13) + (rbntrb.Y * body2.invInertiaWorld.M23)) + (rbntrb.Z * body2.invInertiaWorld.M33);
+                    JFix64 num0 = ((rbntrb.X * body2.invInertiaWorld.M11) + (rbntrb.Y * body2.invInertiaWorld.M21)) + (rbntrb.Z * body2.invInertiaWorld.M31);
+                    JFix64 num1 = ((rbntrb.X * body2.invInertiaWorld.M12) + (rbntrb.Y * body2.invInertiaWorld.M22)) + (rbntrb.Z * body2.invInertiaWorld.M32);
+                    JFix64 num2 = ((rbntrb.X * body2.invInertiaWorld.M13) + (rbntrb.Y * body2.invInertiaWorld.M23)) + (rbntrb.Z * body2.invInertiaWorld.M33);
 
                     rbntrb.X = num0; rbntrb.Y = num1; rbntrb.Z = num2;
 
@@ -560,9 +560,9 @@ namespace Jitter.Dynamics
             if (!treatBody1AsStatic) kNormal += rantra.X * normal.X + rantra.Y * normal.Y + rantra.Z * normal.Z;
             if (!treatBody2AsStatic) kNormal += rbntrb.X * normal.X + rbntrb.Y * normal.Y + rbntrb.Z * normal.Z;
 
-            massNormal = 1.0f / kNormal;
+            massNormal = JFix64.One / kNormal;
 
-            float num = dvx * normal.X + dvy * normal.Y + dvz * normal.Z;
+            JFix64 num = dvx * normal.X + dvy * normal.Y + dvz * normal.Z;
 
             tangent.X = dvx - normal.X * num;
             tangent.Y = dvy - normal.Y * num;
@@ -570,15 +570,15 @@ namespace Jitter.Dynamics
 
             num = tangent.X * tangent.X + tangent.Y * tangent.Y + tangent.Z * tangent.Z;
 
-            if (num != 0.0f)
+            if (num != JFix64.Zero)
             {
-                num = (float)Math.Sqrt(num);
+                num = JFix64Math.Sqrt(num);
                 tangent.X /= num;
                 tangent.Y /= num;
                 tangent.Z /= num;
             }
 
-            float kTangent = 0.0f;
+            JFix64 kTangent = JFix64.Zero;
 
             if (treatBody1AsStatic) rantra.MakeZero();
             else
@@ -593,9 +593,9 @@ namespace Jitter.Dynamics
                     rantra.Z = (relativePos1.X * tangent.Y) - (relativePos1.Y * tangent.X);
 
                     // JVector.Transform(ref rantra, ref body1.invInertiaWorld, out rantra);
-                    float num0 = ((rantra.X * body1.invInertiaWorld.M11) + (rantra.Y * body1.invInertiaWorld.M21)) + (rantra.Z * body1.invInertiaWorld.M31);
-                    float num1 = ((rantra.X * body1.invInertiaWorld.M12) + (rantra.Y * body1.invInertiaWorld.M22)) + (rantra.Z * body1.invInertiaWorld.M32);
-                    float num2 = ((rantra.X * body1.invInertiaWorld.M13) + (rantra.Y * body1.invInertiaWorld.M23)) + (rantra.Z * body1.invInertiaWorld.M33);
+                    JFix64 num0 = ((rantra.X * body1.invInertiaWorld.M11) + (rantra.Y * body1.invInertiaWorld.M21)) + (rantra.Z * body1.invInertiaWorld.M31);
+                    JFix64 num1 = ((rantra.X * body1.invInertiaWorld.M12) + (rantra.Y * body1.invInertiaWorld.M22)) + (rantra.Z * body1.invInertiaWorld.M32);
+                    JFix64 num2 = ((rantra.X * body1.invInertiaWorld.M13) + (rantra.Y * body1.invInertiaWorld.M23)) + (rantra.Z * body1.invInertiaWorld.M33);
 
                     rantra.X = num0; rantra.Y = num1; rantra.Z = num2;
 
@@ -622,9 +622,9 @@ namespace Jitter.Dynamics
                     rbntrb.Z = (relativePos2.X * tangent.Y) - (relativePos2.Y * tangent.X);
 
                     // JVector.Transform(ref rantra, ref body1.invInertiaWorld, out rantra);
-                    float num0 = ((rbntrb.X * body2.invInertiaWorld.M11) + (rbntrb.Y * body2.invInertiaWorld.M21)) + (rbntrb.Z * body2.invInertiaWorld.M31);
-                    float num1 = ((rbntrb.X * body2.invInertiaWorld.M12) + (rbntrb.Y * body2.invInertiaWorld.M22)) + (rbntrb.Z * body2.invInertiaWorld.M32);
-                    float num2 = ((rbntrb.X * body2.invInertiaWorld.M13) + (rbntrb.Y * body2.invInertiaWorld.M23)) + (rbntrb.Z * body2.invInertiaWorld.M33);
+                    JFix64 num0 = ((rbntrb.X * body2.invInertiaWorld.M11) + (rbntrb.Y * body2.invInertiaWorld.M21)) + (rbntrb.Z * body2.invInertiaWorld.M31);
+                    JFix64 num1 = ((rbntrb.X * body2.invInertiaWorld.M12) + (rbntrb.Y * body2.invInertiaWorld.M22)) + (rbntrb.Z * body2.invInertiaWorld.M32);
+                    JFix64 num2 = ((rbntrb.X * body2.invInertiaWorld.M13) + (rbntrb.Y * body2.invInertiaWorld.M23)) + (rbntrb.Z * body2.invInertiaWorld.M33);
 
                     rbntrb.X = num0; rbntrb.Y = num1; rbntrb.Z = num2;
 
@@ -639,31 +639,31 @@ namespace Jitter.Dynamics
 
             if (!treatBody1AsStatic) kTangent += JVector.Dot(ref rantra, ref tangent);
             if (!treatBody2AsStatic) kTangent += JVector.Dot(ref rbntrb, ref tangent);
-            massTangent = 1.0f / kTangent;
+            massTangent = JFix64.One / kTangent;
 
             restitutionBias = lostSpeculativeBounce;
 
-            speculativeVelocity = 0.0f;
+            speculativeVelocity = JFix64.Zero;
 
-            float relNormalVel = normal.X * dvx + normal.Y * dvy + normal.Z * dvz; //JVector.Dot(ref normal, ref dv);
+            JFix64 relNormalVel = normal.X * dvx + normal.Y * dvy + normal.Z * dvz; //JVector.Dot(ref normal, ref dv);
 
             if (Penetration > settings.allowedPenetration)
             {
-                restitutionBias = settings.bias * (1.0f / timestep) * JMath.Max(0.0f, Penetration - settings.allowedPenetration);
-                restitutionBias = JMath.Clamp(restitutionBias, 0.0f, settings.maximumBias);
+                restitutionBias = settings.bias * (JFix64.One / timestep) * JFix64Math.Max(JFix64.Zero, Penetration - settings.allowedPenetration);
+                restitutionBias = JFix64Math.Clamp(restitutionBias, JFix64.Zero, settings.maximumBias);
               //  body1IsMassPoint = body2IsMassPoint = false;
             }
       
 
-            float timeStepRatio = timestep / lastTimeStep;
+            JFix64 timeStepRatio = timestep / lastTimeStep;
             accumulatedNormalImpulse *= timeStepRatio;
             accumulatedTangentImpulse *= timeStepRatio;
 
             {
                 // Static/Dynamic friction
-                float relTangentVel = -(tangent.X * dvx + tangent.Y * dvy + tangent.Z * dvz);
-                float tangentImpulse = massTangent * relTangentVel;
-                float maxTangentImpulse = -staticFriction * accumulatedNormalImpulse;
+                JFix64 relTangentVel = -(tangent.X * dvx + tangent.Y * dvy + tangent.Z * dvz);
+                JFix64 tangentImpulse = massTangent * relTangentVel;
+                JFix64 maxTangentImpulse = -staticFriction * accumulatedNormalImpulse;
 
                 if (tangentImpulse < maxTangentImpulse) friction = dynamicFriction;
                 else friction = staticFriction;
@@ -674,9 +674,9 @@ namespace Jitter.Dynamics
             // Simultaneos solving and restitution is simply not possible
             // so fake it a bit by just applying restitution impulse when there
             // is a new contact.
-            if (relNormalVel < -1.0f && newContact)
+            if (relNormalVel < -JFix64.One && newContact)
             {
-                restitutionBias = Math.Max(-restitution * relNormalVel, restitutionBias);
+                restitutionBias = JFix64Math.Max(-restitution * relNormalVel, restitutionBias);
             }
 
             // Speculative Contacts!
@@ -688,11 +688,11 @@ namespace Jitter.Dynamics
                 speculativeVelocity = penetration / timestep;
 
                 lostSpeculativeBounce = restitutionBias;
-                restitutionBias = 0.0f;
+                restitutionBias = JFix64.Zero;
             }
             else
             {
-                lostSpeculativeBounce = 0.0f;
+                lostSpeculativeBounce = JFix64.Zero;
             }
 
             impulse.X = normal.X * accumulatedNormalImpulse + tangent.X * accumulatedTangentImpulse;
@@ -707,20 +707,20 @@ namespace Jitter.Dynamics
 
                 if (!body1IsMassPoint)
                 {
-                    float num0, num1, num2;
+                    JFix64 num0, num1, num2;
                     num0 = relativePos1.Y * impulse.Z - relativePos1.Z * impulse.Y;
                     num1 = relativePos1.Z * impulse.X - relativePos1.X * impulse.Z;
                     num2 = relativePos1.X * impulse.Y - relativePos1.Y * impulse.X;
 
-                    float num3 =
+                    JFix64 num3 =
                         (((num0 * body1.invInertiaWorld.M11) +
                         (num1 * body1.invInertiaWorld.M21)) +
                         (num2 * body1.invInertiaWorld.M31));
-                    float num4 =
+                    JFix64 num4 =
                         (((num0 * body1.invInertiaWorld.M12) +
                         (num1 * body1.invInertiaWorld.M22)) +
                         (num2 * body1.invInertiaWorld.M32));
-                    float num5 =
+                    JFix64 num5 =
                         (((num0 * body1.invInertiaWorld.M13) +
                         (num1 * body1.invInertiaWorld.M23)) +
                         (num2 * body1.invInertiaWorld.M33));
@@ -742,20 +742,20 @@ namespace Jitter.Dynamics
                 if (!body2IsMassPoint)
                 {
 
-                    float num0, num1, num2;
+                    JFix64 num0, num1, num2;
                     num0 = relativePos2.Y * impulse.Z - relativePos2.Z * impulse.Y;
                     num1 = relativePos2.Z * impulse.X - relativePos2.X * impulse.Z;
                     num2 = relativePos2.X * impulse.Y - relativePos2.Y * impulse.X;
 
-                    float num3 =
+                    JFix64 num3 =
                         (((num0 * body2.invInertiaWorld.M11) +
                         (num1 * body2.invInertiaWorld.M21)) +
                         (num2 * body2.invInertiaWorld.M31));
-                    float num4 =
+                    JFix64 num4 =
                         (((num0 * body2.invInertiaWorld.M12) +
                         (num1 * body2.invInertiaWorld.M22)) +
                         (num2 * body2.invInertiaWorld.M32));
-                    float num5 =
+                    JFix64 num5 =
                         (((num0 * body2.invInertiaWorld.M13) +
                         (num1 * body2.invInertiaWorld.M23)) +
                         (num2 * body2.invInertiaWorld.M33));
@@ -788,7 +788,7 @@ namespace Jitter.Dynamics
         /// <param name="n">The normal pointing to body2.</param>
         /// <param name="penetration">The estimated penetration depth.</param>
         public void Initialize(RigidBody body1, RigidBody body2, ref JVector point1, ref JVector point2, ref JVector n,
-            float penetration, bool newContact, ContactSettings settings)
+            JFix64 penetration, bool newContact, ContactSettings settings)
         {
             this.body1 = body1;  this.body2 = body2;
             this.normal = n; normal.Normalize();
@@ -813,27 +813,27 @@ namespace Jitter.Dynamics
                 treatBody1AsStatic = body1.isStatic;
                 treatBody2AsStatic = body2.isStatic;
 
-                accumulatedNormalImpulse = 0.0f;
-                accumulatedTangentImpulse = 0.0f;
+                accumulatedNormalImpulse = JFix64.Zero;
+                accumulatedTangentImpulse = JFix64.Zero;
 
-                lostSpeculativeBounce = 0.0f;
+                lostSpeculativeBounce = JFix64.Zero;
 
                 switch (settings.MaterialCoefficientMixing)
                 {
                     case ContactSettings.MaterialCoefficientMixingType.TakeMaximum:
-                        staticFriction = JMath.Max(body1.material.staticFriction, body2.material.staticFriction);
-                        dynamicFriction = JMath.Max(body1.material.kineticFriction, body2.material.kineticFriction);
-                        restitution = JMath.Max(body1.material.restitution, body2.material.restitution);
+                        staticFriction = JFix64Math.Max(body1.material.staticFriction, body2.material.staticFriction);
+                        dynamicFriction = JFix64Math.Max(body1.material.kineticFriction, body2.material.kineticFriction);
+                        restitution = JFix64Math.Max(body1.material.restitution, body2.material.restitution);
                         break;
                     case ContactSettings.MaterialCoefficientMixingType.TakeMinimum:
-                        staticFriction = JMath.Min(body1.material.staticFriction, body2.material.staticFriction);
-                        dynamicFriction = JMath.Min(body1.material.kineticFriction, body2.material.kineticFriction);
-                        restitution = JMath.Min(body1.material.restitution, body2.material.restitution);
+                        staticFriction = JFix64Math.Min(body1.material.staticFriction, body2.material.staticFriction);
+                        dynamicFriction = JFix64Math.Min(body1.material.kineticFriction, body2.material.kineticFriction);
+                        restitution = JFix64Math.Min(body1.material.restitution, body2.material.restitution);
                         break;
                     case ContactSettings.MaterialCoefficientMixingType.UseAverage:
-                        staticFriction = (body1.material.staticFriction + body2.material.staticFriction) / 2.0f;
-                        dynamicFriction = (body1.material.kineticFriction + body2.material.kineticFriction) / 2.0f;
-                        restitution = (body1.material.restitution + body2.material.restitution) / 2.0f;
+                        staticFriction = (body1.material.staticFriction + body2.material.staticFriction) / (2 * JFix64.One);
+                        dynamicFriction = (body1.material.kineticFriction + body2.material.kineticFriction) / (2 * JFix64.One);
+                        restitution = (body1.material.restitution + body2.material.restitution) / (2 * JFix64.One);
                         break;
                 }
 
