@@ -33,6 +33,7 @@ namespace Jitter.Collision
     /// structure used to set up the mesh
     /// </summary>
     #region public struct TriangleVertexIndices
+    [Serializable]
     public struct TriangleVertexIndices
     {
         /// <summary>
