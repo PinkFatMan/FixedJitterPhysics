@@ -34,6 +34,7 @@ namespace Jitter.LinearMath
     /// has it's 'by reference' equivalent to speed up time critical
     /// math operations.
     /// </summary>
+    [Serializable]
     public struct JMatrix
     {
         /// <summary>
