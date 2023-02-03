@@ -342,6 +342,27 @@ namespace Jitter.LinearMath
             return result;
         }
         #endregion
+        
+        public static JVector operator *(JQuaternion rotation, JVector point)
+        {
+            JFix64 num1 = rotation.X * 2;
+            JFix64 num2 = rotation.Y * 2;
+            JFix64 num3 = rotation.Z * 2;
+            JFix64 num4 = rotation.X * num1;
+            JFix64 num5 = rotation.Y * num2;
+            JFix64 num6 = rotation.Z * num3;
+            JFix64 num7 = rotation.X * num2;
+            JFix64 num8 = rotation.X * num3;
+            JFix64 num9 = rotation.Y * num3;
+            JFix64 num10 = rotation.W * num1;
+            JFix64 num11 = rotation.W * num2;
+            JFix64 num12 = rotation.W * num3;
+            JVector vector;
+            vector.X =  ((JFix64.One - ( num5 +  num6)) *  point.X + ( num7 -  num12) *  point.Y + ( num8 +  num11) *  point.Z);
+            vector.Y =  (( num7 +  num12) *  point.X + (JFix64.One - ( num4 +  num6)) *  point.Y + ( num9 -  num10) *  point.Z);
+            vector.Z =  (( num8 -  num11) *  point.X + ( num9 +  num10) *  point.Y + (JFix64.One - ( num4 +  num5)) *  point.Z);
+            return vector;
+        } 
 
     }
 }
